@@ -1,1 +1,0 @@
-https://github.com/jMonkeyEngine/jmonkeyengine/releases/download/v3.3.2-stable/jME3.3.2-stable.zip 

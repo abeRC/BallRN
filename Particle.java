@@ -14,14 +14,13 @@ public class Particle {
     private static final double DEFAULTRADIUS = 0.02;
     private static final double DEFAULTMASS = 0.5;
 
-
-    private double[] r;        // position
-    private double[] v;        // velocity
-    private int count;            // number of collisions so far
-    private final double radius;
-    private final double mass;
-    private final String color;
-    /*use String to make it compatible both with StdDraw and jme?*/
+    public final int DIM; //number of translational degrees fo freedom
+    public final double radius;
+    public final double mass;
+    public final String color; /*use String to make it compatible both with StdDraw and jme?*/
+    private double[] r; // position
+    private double[] v; // velocity
+    private int count; // number of collisions so far
 
 
     /**
@@ -30,6 +29,8 @@ public class Particle {
     public Particle (double[] r, double[] v, double radius, double mass, String color) {
         this.r = r.clone(); //defensive copy
         this.v = v.clone(); //defensive copy
+        this.DIM = this.r.length;
+        assert this.DIM == this.v.length: "Particle creation failure. Position and velocity must have the same number of dimensions.";
         this.radius = radius;
         this.mass   = mass;
         this.color  = color;
@@ -42,6 +43,7 @@ public class Particle {
      * @param  N number of dimensions
      */
     public Particle (int N) {
+
         double[] r = new double[N];
         double[] v = new double[N];
 
@@ -49,6 +51,9 @@ public class Particle {
             r[i] = StdRandom.uniform(BORDERCOORDMIN, BORDERCOORDMAX);
             v[i] = StdRandom.uniform(-VELRANGE, VELRANGE);
         }
+        this.r = r;
+        this.v = v;
+        this.DIM = N;
         radius = DEFAULTRADIUS;
         mass   = DEFAULTMASS;
         color  = "BLACK";
@@ -62,15 +67,6 @@ public class Particle {
      */
     public void move (double dt) {
         Couve.scaledIncrement(r, dt, v); //r += v*dt
-    }
-
-    /**
-     * Draws this particle.
-     */
-    public void draw () {
-        //TODO
-        //StdDraw.setPenColor(color);
-       //StdDraw.filledCircle(rx, ry, radius);
     }
 
     /**
@@ -114,6 +110,7 @@ public class Particle {
      *         {@code Double.POSITIVE_INFINITY} if the particles will not collide
      */
     public double timeToHit (Particle that) {
+        assert this.DIM == that.DIM: "Particles have different translational degrees of freedom.";
         if (this == that) {
             return INFINITY;
         }
