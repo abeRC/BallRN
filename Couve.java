@@ -1,11 +1,11 @@
 public class Couve {
-    private static double dotProduct(double[]arr1,double[]arr2)
+    public static double dotProduct (double[] arr1, double[] arr2)
     {
         double produtoEscalar=0;
 
         for(int i=0; i<arr1.length; i++)
             produtoEscalar += arr1[i] * arr2[i];
-   
+
         return produtoEscalar;
     }
 
