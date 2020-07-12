@@ -9,13 +9,12 @@ import edu.princeton.cs.algs4.MinPQ;
 public class CollisionSystem {
 
 
-    /**TODO 4. advanceLazy*/
-    /*TODO 3. preprocessing*/
+    /*TODO B1. preprocessing*/
 
     private final int DIM;
-    private double t = 0.0;          // simulation clock time
-    private MinPQ<Event> pq = new MinPQ<Event>();          // the priority queue
-    private Particle[] particles;     // the array of particles
+    private double t = 0.0; // simulation clock time
+    private MinPQ<Event> pq = new MinPQ<Event>(); // the priority queue
+    private Particle[] particles; // the array of particles
 
     /**
      * Initializes a system with the specified collection of particles.
@@ -66,11 +65,11 @@ public class CollisionSystem {
      *
      * @param dt the amount of time to advance
      */
-    public void advance (double dt) {
+    public void advance (double dt, MinPQ<Event> logQueue) {
         double upto = t + dt;
-        boolean notdone = true;
+        boolean done = false;
 
-        while (!pq.isEmpty() && notdone) {
+        while (!pq.isEmpty()) {
             /*Get impending event; discard if invalidated.*/
             Event e = pq.min();
             if (!e.isValid()) {
@@ -83,10 +82,10 @@ public class CollisionSystem {
             double tfinal;
             if (e.time > upto) {
                 tfinal = upto;
-                notdone = false;
+                done = true;
             } else {
                 tfinal = e.time;
-                pq.delMin();
+                logQueue.insert(pq.delMin());
             }
             for (Particle part : particles) {
                 part.move(tfinal - t);
@@ -95,7 +94,7 @@ public class CollisionSystem {
 
             /*Process the collision and update the PQ with new collisions.
             * But if we're done, then forget it, I'm leaving!*/
-            if (!notdone) {
+            if (done) {
                 return;
             }
             Particle a = e.a;
@@ -113,11 +112,10 @@ public class CollisionSystem {
             /*If the current time becomes equal to (or slightly greater) than upto,
             * then we have done enough advancing.*/
             if (t >= upto) {
-                notdone = false;
                 return;
             }
         }
-        if (pq.isEmpty()) System.err.println("Empty priority queue, can you believe it!?!?!?!");
+        if (pq.isEmpty()) System.err.println("Empty priority queue, can you believe it!?!?!?!"); //assert
     }
 
 
