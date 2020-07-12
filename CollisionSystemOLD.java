@@ -214,5 +214,4 @@ public class CollisionSystemOLD {
         CollisionSystemOLD system = new CollisionSystemOLD(particles);
         system.simulate(10000);
     }
-
 }

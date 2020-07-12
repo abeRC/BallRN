@@ -1,3 +1,4 @@
+
 import java.util.Arrays;
 public class Couve{
 public static void scaledIncrement(double[]a,double[]b,double s)
@@ -42,3 +43,4 @@ private static void printArray(Object[]arr)
         System.out.println("posicao"+i+": "+arr[i]);
 }
 }
+
