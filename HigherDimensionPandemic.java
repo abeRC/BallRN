@@ -15,9 +15,10 @@ import com.jme3.texture.Texture;
  * out of N) view of it with jMonkeyEngine.
  * */
 public class HigherDimensionPandemic extends SimpleApplication {
-    /**TODO 1. pick 3 dimensions*/
     /** TODO 2. gradual velocity increase up to a certain point (then it's instant)*/
     /**TODO 5. read from stdin*/
+    /**TODO 6. attach the walls to a node and possibly translate it so it's
+     *  in the middle of the simulation borders*/
 
     /*
      * The jME game loop has 3 phases:
@@ -34,12 +35,25 @@ public class HigherDimensionPandemic extends SimpleApplication {
      * Only Geometry objects attached to the rootNode are displayed.
      * */
 
-    public final int[] chosenDimensions = {0, 1, 2};
+    public static int DIM;
+    public static int[] chosenDimensions = {0, 1, 2};
     public final float wallDistance = 100;
     private int BEINGCOUNT = 0;
     private Being ball;
 
     public static void main (String[] args){
+        if (args.length == 1) {
+            DIM = Integer.parseInt(args[0]);
+            if (DIM < 3) {
+                throw new IllegalArgumentException("Invalid number of dimensions.");
+            }
+        } else {
+            System.err.println("Please provide exactly 1 parameter: the number of dimensions.");
+            System.exit(1);
+        }
+
+        //pick3dimensions();
+
         HigherDimensionPandemic app = new HigherDimensionPandemic();
         AppSettings as = new AppSettings(true); //default settings
         as.put("Title", "HigherDimensionPandemic"); as.put("VSync", true); as.put("Width", 1280); as.put("Height", 720);
@@ -65,7 +79,25 @@ public class HigherDimensionPandemic extends SimpleApplication {
         ball.g.setLocalTranslation(curpos.add(0, 0, tpf));
     }
 
-    /**Auxiliary function to make the (visual-only) walls.*/
+    /**Arbitrarily pick 3 dimensions to display.*/
+    private static void pick3dimensions() {
+        int cnt = 0;
+        while (cnt < 3) {
+            int r = StdRandom.uniform(DIM);
+            boolean ok = true;
+            for (int i = 0; i < cnt && ok; i++) {
+                if (r == chosenDimensions[i]) {
+                    ok = false;
+                }
+            }
+            if (ok) {
+                chosenDimensions[cnt] = r;
+                cnt++;
+            }
+        }
+    }
+
+    /**Conjure up the (visual-only) walls.*/
     private void makewalls () {
         float halfPi = (float)Math.PI/2;
         Vector3f[] positions = {
@@ -77,12 +109,18 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 new Vector3f(0, -wallDistance, 0),
         };
 
+        // Starry background
         Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
+        Material mat = new Material(assetManager,
+                "Common/MatDefs/Misc/Unshaded.j3md"); //default material
+        mat.setTexture("ColorMap", space);
+        Box mesh = new Box(200, 2, 200);
+
         for (int i = 0; i < 6; i++) {
-            Material mat = new Material(assetManager,
+            // Randomly-colored opaque walls
+            /*mat = new Material(assetManager,
                     "Common/MatDefs/Misc/Unshaded.j3md"); //default material
-            mat.setTexture("ColorMap", space);
-            Box mesh = new Box(200, 3, 200);
+            mat.setColor("Color", ColorRGBA.randomColor());*/
 
             Geometry g = new Geometry("wall" + i, mesh);
             g.setMaterial(mat);
@@ -92,7 +130,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
             * 2 <= i < 4: xAngle = 0,      yAngle = 0, zAngle = halfPi
             * 4 <= i < 6: xAngle = 0,      yAngle = 0, zAngle = 0*/
             g.rotate((1-i/2+i/4)*halfPi, 0, (i/2-i/4-i/4)*halfPi); // integer division is for comapctness
-            rootNode.attachChild(g);
+            rootNode.attachChild(g); //add the wall to the scene
         }
     }
 
@@ -116,7 +154,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
 
             Geometry g = new Geometry(geometryName, mesh);
             g.setMaterial(mat);
-            rootNode.attachChild(g);
+            rootNode.attachChild(g); //add the Being to the scene
             this.p = p;
             this.g = g;
         }
