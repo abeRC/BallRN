@@ -210,7 +210,7 @@ public class CollisionSystemOLD {
             }
         }
 
-        // create collision system and simulate
+        // create collision system and advance
         CollisionSystemOLD system = new CollisionSystemOLD(particles);
         system.simulate(10000);
     }

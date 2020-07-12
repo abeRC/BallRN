@@ -8,13 +8,13 @@ import edu.princeton.cs.algs4.MinPQ;
  */
 public class CollisionSystem {
 
-    /** TODO 2. gradual velocity increase up to a certain point (then it's instant)*/
 
+    /**TODO 4. advanceLazy*/
     /*TODO 3. preprocessing*/
 
     private final int DIM;
-    private MinPQ<Event> pq;          // the priority queue
     private double t = 0.0;          // simulation clock time
+    private MinPQ<Event> pq = new MinPQ<Event>();          // the priority queue
     private Particle[] particles;     // the array of particles
 
     /**
@@ -27,25 +27,23 @@ public class CollisionSystem {
     public CollisionSystem (Particle[] particles, int N) {
         this.particles = particles.clone();   // defensive copy
         this.DIM = N;
-        for (Particle part : particles) { //assert
+
+        /*Initialize PQ with collision events.*/
+        for (Particle part : particles) {
             assert part.DIM == N : "A particle has the wrong number of dimensions. All particles must be N-dimensional";
-        } //assert
+            predict(part);
+        }
     }
 
-    /**
-     * Updates the priority queue with all new events for particle a, up to time {@code limit}.
-     *
-     * @param a the particle whose behavior we wish to predict
-     * @param limit the maximum time of the simulation
-     * */
-    public void predict (Particle a, double limit) {
-        assert a!= null : "Can't predict the behavior of a null particle, now, can we?";
+    /** Updates the priority queue with all new events for particle a.*/
+    public void predict (Particle a) {
+        assert a != null : "Can't predict the behavior of a null particle, now, can we?";
 
-        /* Particle-particle collisions.
-        * Even if limit == INFINITY, never insert if dt == INFINITY.*/
+        /* Particle-particle collisions.*/
         for (Particle part : particles) {
             double dt = a.timeToHit(part);
-            if (t + dt < limit) {
+            if (dt != Double.POSITIVE_INFINITY) {
+                if (dt > 1000000000) System.err.println("PART really huge time to collide"); //assert
                 pq.insert(new Event(t + dt, a, part, -1));
             }
         }
@@ -56,52 +54,70 @@ public class CollisionSystem {
         double[] times = a.timeToHitWalls();
         for (int i = 0; i < DIM; i++) {
             double dt = times[i];
-            if (t+dt < limit) {
+            if (dt != Double.POSITIVE_INFINITY) {
+                if (dt > 1000000000) System.err.println("WALL really great time to collide"); //assert
                 pq.insert(new Event(t+dt, a, null, i));
             }
         }
     }
 
     /**
-     * Simulates the system of particles for the specified amount of time.
+     * Advances the simulation of the system of particles in {@code dt} units of time.
      *
-     * @param limit the maximum time of the simulation
+     * @param dt the amount of time to advance
      */
-    public void simulate (double limit) {
-        /*Initialize PQ with collision events.*/
-        pq = new MinPQ<Event>();
-        for (Particle part : particles) {
-            predict(part, limit);
-        }
+    public void advance (double dt) {
+        double upto = t + dt;
+        boolean notdone = true;
 
-        /*The main event-driven simulation loop.*/
-        while (!pq.isEmpty()) {
+        while (!pq.isEmpty() && notdone) {
             /*Get impending event; discard if invalidated.*/
-            Event e = pq.delMin();
+            Event e = pq.min();
             if (!e.isValid()) {
+                pq.delMin();
                 continue;
             }
-
-            Particle a = e.a;
-            Particle b = e.b;
-            assert a != null : "The particle a shouldn't be null.";
+            assert t <= upto : "Time has advanced too much!";
 
             /*Update all positions up to the time of collision.*/
-            for (Particle part : particles) {
-                part.move(e.time - t);
+            double tfinal;
+            if (e.time > upto) {
+                tfinal = upto;
+                notdone = false;
+            } else {
+                tfinal = e.time;
+                pq.delMin();
             }
-            t = e.time;
+            for (Particle part : particles) {
+                part.move(tfinal - t);
+            }
+            t = tfinal;
 
-            /*Process the collision and update the PQ with new collisions.*/
+            /*Process the collision and update the PQ with new collisions.
+            * But if we're done, then forget it, I'm leaving!*/
+            if (!notdone) {
+                return;
+            }
+            Particle a = e.a;
+            Particle b = e.b;
+            assert a != null : "The particle A shouldn't be null.";
             if (b != null) {
                 a.bounceOff(b); // particle-particle collision
-                predict(a, limit);
-                predict(b, limit);
+                predict(a);
+                predict(b);
             } else {
                 a.bounceOffNWall(e.N); // particle-wall collision
-                predict(a, limit);
+                predict(a);
+            }
+
+            /*If the current time becomes equal to (or slightly greater) than upto,
+            * then we have done enough advancing.*/
+            if (t >= upto) {
+                notdone = false;
+                return;
             }
         }
+        if (pq.isEmpty()) System.err.println("Empty priority queue, can you believe it!?!?!?!");
     }
 
 

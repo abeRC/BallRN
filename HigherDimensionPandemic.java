@@ -16,6 +16,9 @@ import com.jme3.texture.Texture;
  * */
 public class HigherDimensionPandemic extends SimpleApplication {
     /**TODO 1. pick 3 dimensions*/
+    /** TODO 2. gradual velocity increase up to a certain point (then it's instant)*/
+    /**TODO 5. read from stdin*/
+
     /*
      * The jME game loop has 3 phases:
      *      Init: The simpleInitApp() method is executed only once, right at the beginning;
@@ -62,7 +65,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
         ball.g.setLocalTranslation(curpos.add(0, 0, tpf));
     }
 
-    /**Auxiliary function to make the (visual) walls.*/
+    /**Auxiliary function to make the (visual-only) walls.*/
     private void makewalls () {
         float halfPi = (float)Math.PI/2;
         Vector3f[] positions = {
