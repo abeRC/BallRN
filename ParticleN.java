@@ -6,28 +6,30 @@ import edu.princeton.cs.algs4.StdRandom;
  *  for moving the particle and for predicting and resolvling elastic
  *  collisions with vertical walls, horizontal walls, and other particles.
  */
-public class Particle {
+public class ParticleN {
+    public static final double BORDERCOORDMAX = 20.0; //1 for stddraw
+    public static final double BORDERCOORDMIN = -20.0; //0 for stddraw
+    public static final float[] BLUE = new float[]{0, 0, 1, 1};
+    public static final float[] RED = new float[]{1, 0, 0, 1};
+    public static final float[] GREEN = new float[]{0, 1, 0, 1};
     private static final double INFINITY = Double.POSITIVE_INFINITY;
-    private static final double BORDERCOORDMAX = 50.0; //1 for stddraw
-    private static final double BORDERCOORDMIN = -50.0; //0 for stddraw
-    private static final double VELRANGE = 0.5; //0.005 for stddraw
+    private static final double VELRANGE = 10; //0.005 for stddraw
     private static final double DEFAULTRADIUS = 1; //0.02 for stddraw
-    private static final double DEFAULTMASS = 1;
+    private static final double DEFAULTMASS = 0.5;
     private static final float[] DEFAULTCOLOR = new float[]{0, 1, 0, 1}; //green
 
-    public final int DIM; //number of translational degrees fo freedom
+    public final int DIM; //number of translational degrees of freedom
     public final double radius;
     public final double mass;
-    private final float[] color; // array of red, green, blue, alpha values
     private final double[] r; // position
     private final double[] v; // velocity
+    private float[] color; // array of red, green, blue, alpha values
     private int count; // number of collisions so far
-
 
     /**
      * Initializes a particle with the specified position, velocity, radius, mass, and color.
      */
-    public Particle (double[] r, double[] v, double radius, double mass, float[] color) {
+    public ParticleN (double[] r, double[] v, double radius, double mass, float[] color) {
         this.r = r.clone(); //defensive copy
         this.v = v.clone(); //defensive copy
         this.DIM = this.r.length;
@@ -44,7 +46,7 @@ public class Particle {
      * uniformly at random.
      * @param  N number of dimensions
      */
-    public Particle (int N) {
+    public ParticleN (int N) {
         double[] r = new double[N];
         double[] v = new double[N];
 
@@ -57,12 +59,17 @@ public class Particle {
         this.DIM = N;
         radius = DEFAULTRADIUS;
         mass   = DEFAULTMASS;
-        color  = DEFAULTCOLOR; //black
+        color  = DEFAULTCOLOR;
     }
 
     /**Returns (a copy of) this particle's color.*/
     public float[] color () {
         return this.color.clone();
+    }
+
+    /**Changes this particle's color.*/
+    public void setColor (float[] color) {
+        this.color = color.clone();
     }
 
     /**Returns the position in the Nth dimension.*/
@@ -100,7 +107,7 @@ public class Particle {
 
     /** Returns the difference between the positions of the two particles.
      * @return dr = part2.r - part1.r */
-    private static double[] deltaR (Particle part1, Particle part2) {
+    private static double[] deltaR (ParticleN part1, ParticleN part2) {
         double[] dr  = part2.r.clone();
         Couve.scaledIncrement(dr, -1, part1.r);
 
@@ -109,7 +116,7 @@ public class Particle {
 
     /** Returns the difference between the velocities of the two particles.
      * @return dv = part2.v - part1.v */
-    private static double[] deltaV (Particle part1, Particle part2) {
+    private static double[] deltaV (ParticleN part1, ParticleN part2) {
         double[] dv  = part2.v.clone();
         Couve.scaledIncrement(dv, -1, part1.v);
 
@@ -125,15 +132,15 @@ public class Particle {
      *         particle, assuming no intervening collisions;
      *         {@code Double.POSITIVE_INFINITY} if the particles will not collide
      */
-    public double timeToHit (Particle that) {
+    public double timeToHit (ParticleN that) {
         assert this.DIM == that.DIM: "Particles have different translational degrees of freedom.";
         if (this == that) {
             return INFINITY;
         }
 
         /*The answer should be the same regardless of which particle is this or that.*/
-        double[] dr = Particle.deltaR(this, that); //initial position
-        double[] dv = Particle.deltaV(this, that); //initial velocity
+        double[] dr = ParticleN.deltaR(this, that); //initial position
+        double[] dv = ParticleN.deltaV(this, that); //initial velocity
 
         double dvdr = Couve.dotProduct(dv, dr);
         if (dvdr > 0) {
@@ -197,9 +204,9 @@ public class Particle {
      *
      * @param  that the other particle
      */
-    public void bounceOff (Particle that) {
-        double[] dr = Particle.deltaR(this, that);
-        double[] dv = Particle.deltaV(this, that);
+    public void bounceOff (ParticleN that) {
+        double[] dr = ParticleN.deltaR(this, that);
+        double[] dv = ParticleN.deltaV(this, that);
         double dvdr = Couve.dotProduct(dv, dr);
         double dist = this.radius + that.radius;   // distance between particle centers at collision
 
@@ -214,6 +221,14 @@ public class Particle {
         /*Update collision counts.*/
         this.count++;
         that.count++;
+
+        /*Overriding classes have the chance to do something here.*/
+        this.handleBinaryCollision(that);
+    }
+
+    /**Intentionally-not-implemented method that is called at the end of a binary collision.*/
+    public void handleBinaryCollision (ParticleN that) {
+        ;
     }
 
     /**

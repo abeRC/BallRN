@@ -1,28 +1,42 @@
-public class Couve {
-    public static double dotProduct (double[] arr1, double[] arr2)
+import java.util.Arrays;
+public class Couve{
+    public static void scaledIncrement(double[]a,double s,double[]b)
+    {
+        for(int i=0; i<a.length; i++)
+            a[i]=a[i]+s*b[i];
+    }
+    public static void main(String[] args){
+        double[]a={0,3,5,-1, 7, 0,3,2,1, 5, 6, 7, 0, 1, 2,3,5,-1, 7, 0,3,2,1, 5, 6, 7, 0, 1, 2, 1};
+        double[]b={3,0,5,0.95, 7,5,3,2,1, 5, 6, 7, 0, 1, 2,3,0,5,0.95, 7,5,3,2,1, 5, 6, 7, 0, 1, 2};
+        double c=3;
+        System.out.println(Arrays.toString(a));
+        scaledIncrement(a,c,b);
+        System.out.println("novo a:"+Arrays.toString(a));
+        System.out.println(dotProduct(a,b));
+        System.out.println(Arrays.toString(scale(c,a)));
+        Double[] arr = {4.2, 2.3333, 1., 9.};
+        printArray(arr);
+    }
+    public static double dotProduct(double[]arr1,double[]arr2)
     {
         double produtoEscalar=0;
 
-        for(int i=0; i<arr2.length; i++)
-            produtoEscalar += arr2[i] * arr1[i];
+        for(int i=0; i<arr1.length; i++)
+            produtoEscalar += arr1[i] * arr2[i];
 
         return produtoEscalar;
     }
-
-    public static void scaledIncrement (double[] arr, double s, double[] b) {
-        //faz arr = arr + s*b, para todas as posicoes dos vetores
+    public static double[]scale(double s,double[]arr)
+    {
+        double[]ret=null;
+        ret=new double[arr.length];
+        for(int i=0; i<arr.length; i++)
+            ret[i]=s*arr[i];
+        return ret;
     }
-
-    public static double[] scale (double s, double[] arr) {
-        double[] ans;
-        //faz ans = s*arr, para todas as posições do vetor, e depois retorna ans
-        return ans;
-    }
-
-    public static void main(String[] args){
-        double[]a={0,3,5,-1};
-        double[]b={3,0,5,0.95};
-        System.out.println(dotProduct(a,b));
+    private static void printArray(Object[]arr)
+    {
+        for(int i=0; i<arr.length; i++)
+            System.out.println("posicao"+i+": "+arr[i]);
     }
 }
-

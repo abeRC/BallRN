@@ -6,7 +6,7 @@ import edu.princeton.cs.algs4.MinPQ;
  *  This event-based simulation relies on a priority queue.
  *  No rendering is done inside this class.
  */
-public class CollisionSystem {
+public class CollisionSystemRN {
 
 
     /*TODO B1. preprocessing*/
@@ -14,7 +14,7 @@ public class CollisionSystem {
     private final int DIM;
     private double t = 0.0; // simulation clock time
     private MinPQ<Event> pq = new MinPQ<Event>(); // the priority queue
-    private Particle[] particles; // the array of particles
+    ParticleN[] particles; // the array of particles
 
     /**
      * Initializes a system with the specified collection of particles.
@@ -23,23 +23,23 @@ public class CollisionSystem {
      * @param particles the array of particles
      * @param N the number of spatial dimensions
      */
-    public CollisionSystem (Particle[] particles, int N) {
+    public CollisionSystemRN (ParticleN[] particles, int N) {
         this.particles = particles.clone();   // defensive copy
         this.DIM = N;
 
         /*Initialize PQ with collision events.*/
-        for (Particle part : particles) {
+        for (ParticleN part : particles) {
             assert part.DIM == N : "A particle has the wrong number of dimensions. All particles must be N-dimensional";
             predict(part);
         }
     }
 
     /** Updates the priority queue with all new events for particle a.*/
-    public void predict (Particle a) {
+    private void predict (ParticleN a) {
         assert a != null : "Can't predict the behavior of a null particle, now, can we?";
 
         /* Particle-particle collisions.*/
-        for (Particle part : particles) {
+        for (ParticleN part : particles) {
             double dt = a.timeToHit(part);
             if (dt != Double.POSITIVE_INFINITY) {
                 if (dt > 1000000000) System.err.println("PART really huge time to collide"); //assert
@@ -65,7 +65,7 @@ public class CollisionSystem {
      *
      * @param dt the amount of time to advance
      */
-    public void advance (double dt, MinPQ<Event> logQueue) {
+    public void advance (double dt) {
         double upto = t + dt;
         boolean done = false;
 
@@ -85,9 +85,8 @@ public class CollisionSystem {
                 done = true;
             } else {
                 tfinal = e.time;
-                logQueue.insert(pq.delMin());
             }
-            for (Particle part : particles) {
+            for (ParticleN part : particles) {
                 part.move(tfinal - t);
             }
             t = tfinal;
@@ -97,8 +96,8 @@ public class CollisionSystem {
             if (done) {
                 return;
             }
-            Particle a = e.a;
-            Particle b = e.b;
+            ParticleN a = e.a;
+            ParticleN b = e.b;
             assert a != null : "The particle A shouldn't be null.";
             if (b != null) {
                 a.bounceOff(b); // particle-particle collision
@@ -119,19 +118,19 @@ public class CollisionSystem {
     }
 
 
-    /***************************************************************************
+    /**
      *  An event during a particle collision simulation. Each event contains
      *  the time at which it will occur (assuming no supervening actions)
      *  and the particles a and b involved.
      *
      *    -  a and b both not null, N == -1:  binary collision between a and b
      *    -  a not null, b null, N != -1:     collision with wall in the Nth axis
-     ***************************************************************************/
+     */
     public static class Event implements Comparable<Event> {
-        private final double time;         // time that event is scheduled to occur
-        private final Particle a, b;       // particles involved in event, possibly null
-        private final int N;
-        private final int countA, countB;  // collision counts at event creation
+        private final double time; // time that event is scheduled to occur
+        final ParticleN a, b; // particles involved in event, possibly null
+        private final int N; // axis in which a particle-wall collision occurred
+        private final int countA, countB; // collision counts at event creation
 
 
         /**
@@ -140,7 +139,7 @@ public class CollisionSystem {
          * {@code N} should be the index of the axis that corresponds to that wall.
          * Otherwise, {@code N} should be -1.
          * */
-        public Event (double t, Particle a, Particle b, int N) {
+        public Event (double t, ParticleN a, ParticleN b, int N) {
             this.time = t;
             this.a = a;
             this.b = b;
