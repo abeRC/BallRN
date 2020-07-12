@@ -8,11 +8,11 @@ import edu.princeton.cs.algs4.StdRandom;
  */
 public class Particle {
     private static final double INFINITY = Double.POSITIVE_INFINITY;
-    private static final double BORDERCOORDMAX = 100.0; //1 for stddraw
-    private static final double BORDERCOORDMIN = -100.0; //0 for stddraw
+    private static final double BORDERCOORDMAX = 50.0; //1 for stddraw
+    private static final double BORDERCOORDMIN = -50.0; //0 for stddraw
     private static final double VELRANGE = 0.5; //0.005 for stddraw
-    private static final double DEFAULTRADIUS = 0.5; //0.02 for stddraw
-    private static final double DEFAULTMASS = 0.5;
+    private static final double DEFAULTRADIUS = 1; //0.02 for stddraw
+    private static final double DEFAULTMASS = 1;
     private static final float[] DEFAULTCOLOR = new float[]{0, 1, 0, 1}; //green
 
     public final int DIM; //number of translational degrees fo freedom
