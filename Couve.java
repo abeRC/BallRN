@@ -3,8 +3,8 @@ public class Couve {
     {
         double produtoEscalar=0;
 
-        for(int i=0; i<arr1.length; i++)
-            produtoEscalar += arr1[i] * arr2[i];
+        for(int i=0; i<arr2.length; i++)
+            produtoEscalar += arr2[i] * arr1[i];
 
         return produtoEscalar;
     }
@@ -14,9 +14,9 @@ public class Couve {
     }
 
     public static double[] scale (double s, double[] arr) {
-        double[] ret = null;
-        //faz ret = s*arr, para todas as posições do vetor, e depois retorna ret
-        return ret;
+        double[] ans;
+        //faz ans = s*arr, para todas as posições do vetor, e depois retorna ans
+        return ans;
     }
 
     public static void main(String[] args){
