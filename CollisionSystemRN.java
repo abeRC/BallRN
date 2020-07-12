@@ -41,8 +41,7 @@ public class CollisionSystemRN {
         /* Particle-particle collisions.*/
         for (ParticleN part : particles) {
             double dt = a.timeToHit(part);
-            if (dt != Double.POSITIVE_INFINITY) {
-                if (dt > 1000000000) System.err.println("PART really huge time to collide"); //assert
+            if (dt < Double.POSITIVE_INFINITY) {
                 pq.insert(new Event(t + dt, a, part, -1));
             }
         }
@@ -53,8 +52,7 @@ public class CollisionSystemRN {
         double[] times = a.timeToHitWalls();
         for (int i = 0; i < DIM; i++) {
             double dt = times[i];
-            if (dt != Double.POSITIVE_INFINITY) {
-                if (dt > 1000000000) System.err.println("WALL really great time to collide"); //assert
+            if (dt < Double.POSITIVE_INFINITY) {
                 pq.insert(new Event(t+dt, a, null, i));
             }
         }

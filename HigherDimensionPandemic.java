@@ -1,11 +1,15 @@
 import com.jme3.app.SimpleApplication;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.MathUtils;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
+import com.jme3.texture.Texture;
+import edu.princeton.cs.algs4.StdRandom;
+
 
 /**
  * Simulates a higher-dimension pandemic and displays a 3D (3 possibly random dimensions
@@ -35,7 +39,9 @@ public class HigherDimensionPandemic extends SimpleApplication {
      * Only Geometry objects attached to the rootNode are displayed.
      * */
 
-    public static final double baseRecoveryTime = 20;
+    public static final double baseRecoveryTime = 42;
+    private static final double INITIAL_INFECTED = 0.1;
+    public static int NUM;
     public static int DIM;
     public static int[] priDim = {0, 1, 2}; // priviliged dimensions
     private static CollisionSystemRN cs;
@@ -52,21 +58,29 @@ public class HigherDimensionPandemic extends SimpleApplication {
         }
         public PartN (int N) {
             super(N);
+            if (StdRandom.bernoulli(INITIAL_INFECTED)) {
+                infect();
+            }
         }
+
+        /**Infect this particle.*/
+        private void infect () {
+            status = 'U'; // updateInfection
+            setColor(ParticleN.RED);
+            timer = 5+Math.abs(StdRandom.gaussian(baseRecoveryTime, 4.2));
+            /*In reality, this would look more like a gamma/Weibull/log-normal distribution*/
+        }
+
 
         /**If one of the particles is infected, the other one becomes infected as well.*/
         @Override
         public void handleBinaryCollision (ParticleN that) {
             PartN p = (PartN) that;
-            if (this.status == 'I') {
-                p.status = 'I';
-                p.setColor(ParticleN.RED);
-                p.timer = StdRandom.uniform(baseRecoveryTime*0.5, baseRecoveryTime*1.5);
+            if (this.status == 'I' && p.status != 'I') {
+                p.infect();
             }
-            if (p.status == 'I') {
-                this.status = 'I';
-                this.setColor(ParticleN.RED);
-                this.timer = StdRandom.uniform(baseRecoveryTime*0.5, baseRecoveryTime*1.5);
+            if (p.status == 'I' && this.status != 'I') {
+                this.infect();
             }
         }
 
@@ -81,22 +95,22 @@ public class HigherDimensionPandemic extends SimpleApplication {
     }
 
     public static void main (String[] args){
-        // 3 -> no de parts; parts.length -> no de parts; cs.particles.length -> no de parts
-        if (args.length == 1) {
+        if (args.length == 2) {
             DIM = Integer.parseInt(args[0]);
             if (DIM < 3) {
                 throw new IllegalArgumentException("Invalid number of dimensions.");
             }
+            NUM = Integer.parseInt(args[1]);
         } else {
-            System.err.println("Please provide exactly 1 parameter: the number of dimensions.");
+            System.err.println("Please provide exactly 2 parameters: the number of dimensions and the number of particles");
             System.exit(1);
         }
 
         /*Scientifically determine the correct dimensions to analyze.*/
-        //pick3dimensions();
+        pick3Dimensions();
 
         /*Create higher physics.*/
-        PartN[] parts = new PartN[20];
+        PartN[] parts = new PartN[NUM];
         for (int i = 0; i < parts.length; i++) {
             parts[i] = new PartN(DIM);
         }
@@ -120,7 +134,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
         makewalls();
 
         /*Manifest the physical forms of our beings.*/
-        beings = new Being[cs.particles.length];
+        beings = new Being[NUM];
         for (int i = 0; i < beings.length; i++) {
             beings[i] = new Being((PartN)cs.particles[i]);
         }
@@ -133,7 +147,8 @@ public class HigherDimensionPandemic extends SimpleApplication {
         /*Advance the simulation and update the positions of all beings.*/
         cs.advance(tpf);
         for (Being b : beings) {
-            b.updatePos();
+            b.updatePos(); // update position
+            b.updateInfection(tpf);
         }
     }
 
@@ -172,14 +187,14 @@ public class HigherDimensionPandemic extends SimpleApplication {
         };
 
         // Starry background
-        //Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
-        Material mat = new Material(assetManager,
+        /*Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
+        //Material spaaaace = new Material(assetManager,
                 "Common/MatDefs/Misc/Unshaded.j3md"); //default material
-        //mat.setTexture("ColorMap", space);
+        //spaaaace.setTexture("ColorMap", space);*/
         Box mesh = new Box(halfWallDistance, 2, halfWallDistance);
         for (int i = 0; i < 6; i++) {
             // Randomly-colored opaque walls
-            mat = new Material(assetManager,
+            Material mat = new Material(assetManager,
                     "Common/MatDefs/Misc/Unshaded.j3md"); //default material
             mat.setColor("Color", ColorRGBA.randomColor());
 
@@ -200,6 +215,22 @@ public class HigherDimensionPandemic extends SimpleApplication {
         private final PartN p;
         private final Geometry g;
 
+        /**Create a Mesh and a Material according to the properties of p,
+         * make a Geometry out of them and attach the Geometry to the rootNode.*/
+        private Being (PartN p) {
+            Sphere mesh = new Sphere(30, 30, (float) p.radius); // First 2 arguments control the quality of the sphere.
+            String geometryName = "ball"+BEINGCOUNT;
+            BEINGCOUNT++;
+
+            Geometry g = new Geometry(geometryName, mesh);
+
+            this.p = p;
+            this.g = g;
+            updatePos(); // set initial coordinates
+            updateColor(); // create material with p.color()
+            rootNode.attachChild(g); //add the Being to the scene
+        }
+
         /**Update the Geometry's position based on the particle's position in the priviliged dimensions.*/
         private void updatePos () {
             g.setLocalTranslation(
@@ -217,20 +248,20 @@ public class HigherDimensionPandemic extends SimpleApplication {
             g.setMaterial(mat);
         }
 
-        /**Create a Mesh and a Material according to the properties of p,
-         * make a Geometry out of them and attach the Geometry to the rootNode.*/
-        private Being (PartN p) {
-            Sphere mesh = new Sphere(30, 30, (float) p.radius); // First 2 arguments control the quality of the sphere.
-            String geometryName = "ball"+BEINGCOUNT;
-            BEINGCOUNT++;
-
-            Geometry g = new Geometry(geometryName, mesh);
-
-            this.p = p;
-            this.g = g;
-            updatePos(); // set initial coordinates
-            updateColor(); // create material with p.color()
-            rootNode.attachChild(g); //add the Being to the scene
+        private void updateInfection (double tpf) {
+            char c = p.status;
+            if (c == 'I') { // infected
+                p.timer -= tpf;
+                if (p.timer < 0) {
+                    p.status = 'R';
+                    p.setColor(ParticleN.BLUE);
+                    updateColor();
+                }
+            } else if (c == 'U') { // updateColor
+                updateColor();
+                p.status = 'I';
+                p.timer -= tpf;
+            }
         }
     }
 }
