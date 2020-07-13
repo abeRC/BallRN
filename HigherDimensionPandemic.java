@@ -8,6 +8,7 @@ import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
+import edu.princeton.cs.algs4.SET;
 import edu.princeton.cs.algs4.StdRandom;
 
 
@@ -47,8 +48,9 @@ public class HigherDimensionPandemic extends SimpleApplication {
     private static CollisionSystemRN cs;
     private int BEINGCOUNT = 0;
     private static Being[] beings;
+    private static SET<String> options = new SET<>();
 
-    /**Implement extra methods to simulate the pandemic.*/
+    /**Implement extra methods to simulate a pandemic.*/
     private static class PartN extends ParticleN {
         private char status = 'S'; // S(usceptible)/I(nfected)/R(ecovered)
         private double timer = 0;
@@ -76,10 +78,10 @@ public class HigherDimensionPandemic extends SimpleApplication {
         @Override
         public void handleBinaryCollision (ParticleN that) {
             PartN p = (PartN) that;
-            if (this.status == 'I' && p.status != 'I') {
+            if (this.status == 'I' && p.status == 'S') {
                 p.infect();
             }
-            if (p.status == 'I' && this.status != 'I') {
+            if (p.status == 'I' && this.status == 'S') {
                 this.infect();
             }
         }
@@ -94,16 +96,33 @@ public class HigherDimensionPandemic extends SimpleApplication {
         }
     }
 
-    public static void main (String[] args){
-        if (args.length == 2) {
-            DIM = Integer.parseInt(args[0]);
-            if (DIM < 3) {
-                throw new IllegalArgumentException("Invalid number of dimensions.");
-            }
-            NUM = Integer.parseInt(args[1]);
-        } else {
-            System.err.println("Please provide exactly 2 parameters: the number of dimensions and the number of particles");
+    public static void printUsage () {
+        System.err.println("Simulate an N-dimensional pandemic with CollisionSystemRN.java,\n" +
+                "and display it with jMonkeyEngine.\n" +
+                "java HigherDimensionalPandemic DIM PNUM\n" +
+                "where DIM is the number of dimensions and PNUM is the number of random\n" +
+                "particles to create.\n" +
+                "Extra options: " +
+                "   --space                     Use a space texture for the cube." +
+                "   --social-distancing1        Restrict movement by 3/4." +
+                "   --social-distancing2        Restrict movement by 7/8.");
+    }
+
+    public static void main (String[] args) {
+        if (args.length < 1) {
+            printUsage();
             System.exit(1);
+        }
+
+        DIM = Integer.parseInt(args[0]);
+        if (DIM < 3) {
+            throw new IllegalArgumentException("Invalid number of dimensions.");
+        }
+        NUM = Integer.parseInt(args[1]);
+        if (args.length >= 3) {
+            for (int i = 2; i < args.length; i++) {
+                options.add(args[i].replaceAll("[^a-z]", "").toLowerCase());
+            }
         }
 
         /*Scientifically determine the correct dimensions to analyze.*/
@@ -129,6 +148,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
     @Override
     public void simpleInitApp () {
         flyCam.setMoveSpeed(7); // Make the camera more bearable.
+        mouseInput.setCursorVisible(true);
 
         /*Put up walls N-dimensionally. (Actually, they're just for show)*/
         makewalls();
@@ -186,17 +206,22 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 new Vector3f(0, -p, 0),
         };
 
-        // Starry background
-        /*Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
-        //Material spaaaace = new Material(assetManager,
-                "Common/MatDefs/Misc/Unshaded.j3md"); //default material
-        //spaaaace.setTexture("ColorMap", space);*/
+        Material mat;
         Box mesh = new Box(halfWallDistance, 2, halfWallDistance);
+
         for (int i = 0; i < 6; i++) {
-            // Randomly-colored opaque walls
-            Material mat = new Material(assetManager,
-                    "Common/MatDefs/Misc/Unshaded.j3md"); //default material
-            mat.setColor("Color", ColorRGBA.randomColor());
+            // Starry background
+            if (options.contains("space")) {
+                Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
+                mat = new Material(assetManager,
+                        "Common/MatDefs/Misc/Unshaded.j3md"); //default material
+                mat.setTexture("ColorMap", space);
+
+            } else { // Randomly-colored opaque walls
+                mat = new Material(assetManager,
+                        "Common/MatDefs/Misc/Unshaded.j3md"); //default material
+                mat.setColor("Color", ColorRGBA.randomColor());
+            }
 
             Geometry g = new Geometry("wall" + i, mesh);
             g.setMaterial(mat);
