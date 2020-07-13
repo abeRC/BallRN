@@ -10,6 +10,7 @@ import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import edu.princeton.cs.algs4.SET;
 import edu.princeton.cs.algs4.StdRandom;
+import edu.princeton.cs.algs4.StdDraw;
 
 
 /**
@@ -230,25 +231,28 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 new Vector3f(0, -p, 0),
         };
 
-        Material mat;
+        Material mat, spaceMat;
         Box mesh = new Box(halfWallDistance, 2, halfWallDistance);
+        // Starry background
+        spaceMat = new Material(assetManager,
+                "Common/MatDefs/Misc/Unshaded.j3md"); //default material
+        if (options.contains("space")) {
+            Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
+            spaceMat.setTexture("ColorMap", space);
+        }
 
         for (int i = 0; i < 6; i++) {
-            // Starry background
-            if (options.contains("space")) {
-                Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
-                mat = new Material(assetManager,
-                        "Common/MatDefs/Misc/Unshaded.j3md"); //default material
-                mat.setTexture("ColorMap", space);
-
-            } else { // Randomly-colored opaque walls
-                mat = new Material(assetManager,
-                        "Common/MatDefs/Misc/Unshaded.j3md"); //default material
-                mat.setColor("Color", ColorRGBA.randomColor());
-            }
+            // Randomly-colored opaque walls
+            mat = new Material(assetManager,
+                    "Common/MatDefs/Misc/Unshaded.j3md"); //default material
+            mat.setColor("Color", ColorRGBA.randomColor());
 
             Geometry g = new Geometry("wall" + i, mesh);
-            g.setMaterial(mat);
+            if (options.contains("space")) {
+                g.setMaterial(spaceMat);
+            } else {
+                g.setMaterial(mat);
+            }
             g.setLocalTranslation(positions[i]);
 
             /*0 <= i < 2: xAngle = halfPi, yAngle = 0, zAngle = 0
