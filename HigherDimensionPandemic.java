@@ -60,6 +60,9 @@ public class HigherDimensionPandemic extends SimpleApplication {
         }
         public PartN (int N) {
             super(N);
+            if (options.contains("socialdistancing")) {
+
+            }
             if (StdRandom.bernoulli(INITIAL_INFECTED)) {
                 infect();
             }
@@ -104,8 +107,8 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 "particles to create.\n" +
                 "Extra options: " +
                 "   --space                     Use a space texture for the cube." +
-                "   --social-distancing1        Restrict movement by 3/4." +
-                "   --social-distancing2        Restrict movement by 7/8.");
+                "   --social-distancing         Restrict movement by 3/4." +
+                "   --max-social-distancing     Restrict movement by 7/8.");
     }
 
     public static void main (String[] args) {
