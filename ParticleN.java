@@ -20,11 +20,12 @@ public class ParticleN {
 
     public final int DIM; //number of translational degrees of freedom
     public final double radius;
-    public final double mass;
+    private double mass;
     private final double[] r; // position
     private final double[] v; // velocity
     private float[] color; // array of red, green, blue, alpha values
     private int count; // number of collisions so far
+    private double savedMass = Double.NaN;
 
     /**
      * Initializes a particle with the specified position, velocity, radius, mass, and color.
@@ -62,6 +63,11 @@ public class ParticleN {
         color  = DEFAULTCOLOR;
     }
 
+    /**Returns this particle's mass.*/
+    public double mass () {
+        return mass;
+    }
+
     /**Returns (a copy of) this particle's color.*/
     public float[] color () {
         return this.color.clone();
@@ -80,6 +86,22 @@ public class ParticleN {
     /**Returns the velocity in the Nth dimension.*/
     public double velocity (int N) {
         return v[N];
+    }
+
+    /**Prevent this particle from moving.*/
+    public void immobilize () {
+        savedMass = mass;
+        mass = 100000000000000d;
+        for (int i = 0; i < DIM; i++) {
+            v[i] = 0;
+        }
+    }
+
+    /**Frees this particle from imprisonment.*/
+    public void free () {
+        if (!Double.isNaN(savedMass)) {
+            mass = savedMass;
+        }
     }
 
     /**
