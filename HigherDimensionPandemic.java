@@ -48,15 +48,12 @@ public class HigherDimensionPandemic extends SimpleApplication {
     private static CollisionSystemRN cs;
     private int BEINGCOUNT = 0;
     private static Being[] beings;
-<<<<<<< HEAD
     private static SET<String> options = new SET<>();
-=======
     private static int infectedBeings = 0;
     private static int susceptibleBeings = 0;
     private static int recoveredBeings = 0;
     private static boolean makeChart = false;
     float time = 0;
->>>>>>> f6a0f63a9b4e0aaafd6fa499a54688b1dd34e5fc
 
     /**Implement extra methods to simulate a pandemic.*/
     private static class PartN extends ParticleN {
@@ -129,35 +126,38 @@ public class HigherDimensionPandemic extends SimpleApplication {
         if (args.length < 1) {
             printUsage();
 
-        DIM = Integer.parseInt(args[0]);
-        if (DIM < 3) {
-            throw new IllegalArgumentException("Invalid number of dimensions.");
-        }
-        NUM = Integer.parseInt(args[1]);
-        if (args.length >= 3) {
-            for (int i = 2; i < args.length; i++) {
-                options.add(args[i].replaceAll("[^a-z]", "").toLowerCase());
+            DIM = Integer.parseInt(args[0]);
+            if (DIM < 3) {
+                throw new IllegalArgumentException("Invalid number of dimensions.");
             }
+            NUM = Integer.parseInt(args[1]);
+            if (args.length >= 3) {
+                for (int i = 2; i < args.length; i++) {
+                    options.add(args[i].replaceAll("[^a-z]", "").toLowerCase());
+                }
+            }
+
+            /*Scientifically determine the correct dimensions to analyze.*/
+            pick3Dimensions();
+
+            /*Create higher physics.*/
+            PartN[] parts = new PartN[NUM];
+            for (int i = 0; i < parts.length; i++) {
+                parts[i] = new PartN(DIM);
+            }
+            cs = new CollisionSystemRN(parts, DIM);
+
+            /*Initiate application.*/
+            HigherDimensionPandemic app = new HigherDimensionPandemic();
+            AppSettings as = new AppSettings(true); //default settings
+            as.put("Title", "HigherDimensionPandemic");
+            as.put("VSync", true);
+            as.put("Width", 1280);
+            as.put("Height", 720);
+            app.setShowSettings(false); // Uncomment to skip the initial settings popup
+            app.setSettings(as);
+            app.start();
         }
-
-        /*Scientifically determine the correct dimensions to analyze.*/
-        pick3Dimensions();
-
-        /*Create higher physics.*/
-        PartN[] parts = new PartN[NUM];
-        for (int i = 0; i < parts.length; i++) {
-            parts[i] = new PartN(DIM);
-        }
-        cs = new CollisionSystemRN(parts, DIM);
-
-        /*Initiate application.*/
-        HigherDimensionPandemic app = new HigherDimensionPandemic();
-        AppSettings as = new AppSettings(true); //default settings
-        as.put("Title", "HigherDimensionPandemic"); as.put("VSync", true); as.put("Width", 1280); as.put("Height", 720);
-        app.setShowSettings(false); // Uncomment to skip the initial settings popup
-        app.setSettings(as);
-        app.start();
-
     }
 
     /**Initialization phase.*/
