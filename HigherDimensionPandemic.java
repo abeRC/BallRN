@@ -47,6 +47,11 @@ public class HigherDimensionPandemic extends SimpleApplication {
     private static CollisionSystemRN cs;
     private int BEINGCOUNT = 0;
     private static Being[] beings;
+    private static int infectedBeings = 0;
+    private static int susceptibleBeings = 0;
+    private static int recoveredBeings = 0;
+    private static boolean makeChart = false;
+    float time = 0;
 
     /**Implement extra methods to simulate the pandemic.*/
     private static class PartN extends ParticleN {
@@ -58,6 +63,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
         }
         public PartN (int N) {
             super(N);
+            susceptibleBeings++;
             if (StdRandom.bernoulli(INITIAL_INFECTED)) {
                 infect();
             }
@@ -65,10 +71,15 @@ public class HigherDimensionPandemic extends SimpleApplication {
 
         /**Infect this particle.*/
         private void infect () {
+            if (this.status == 'R') recoveredBeings--;
+            else susceptibleBeings--;
+            infectedBeings++;
             status = 'U'; // updateInfection
             setColor(ParticleN.RED);
             timer = 5+Math.abs(StdRandom.gaussian(baseRecoveryTime, 4.2));
             /*In reality, this would look more like a gamma/Weibull/log-normal distribution*/
+
+
         }
 
 
@@ -76,10 +87,10 @@ public class HigherDimensionPandemic extends SimpleApplication {
         @Override
         public void handleBinaryCollision (ParticleN that) {
             PartN p = (PartN) that;
-            if (this.status == 'I' && p.status != 'I') {
+            if (this.status == 'I' && p.status == 'S') {
                 p.infect();
             }
-            if (p.status == 'I' && this.status != 'I') {
+            if (p.status == 'I' && this.status == 'S') {
                 this.infect();
             }
         }
@@ -95,14 +106,17 @@ public class HigherDimensionPandemic extends SimpleApplication {
     }
 
     public static void main (String[] args){
-        if (args.length == 2) {
+
+
+        if (args.length >= 2) {
             DIM = Integer.parseInt(args[0]);
             if (DIM < 3) {
                 throw new IllegalArgumentException("Invalid number of dimensions.");
             }
             NUM = Integer.parseInt(args[1]);
-        } else {
-            System.err.println("Please provide exactly 2 parameters: the number of dimensions and the number of particles");
+            if (args.length == 3) makeChart = true;
+        } else if (args.length > 3){
+            System.err.println("Please provide 2 (or 3) parameters: the number of dimensions, the number of particles and another parameter to enable the chart");
             System.exit(1);
         }
 
@@ -123,11 +137,14 @@ public class HigherDimensionPandemic extends SimpleApplication {
         app.setShowSettings(false); // Uncomment to skip the initial settings popup
         app.setSettings(as);
         app.start();
+
     }
 
     /**Initialization phase.*/
     @Override
     public void simpleInitApp () {
+
+        if (makeChart) StdDraw.setCanvasSize(1500, 700);
         flyCam.setMoveSpeed(7); // Make the camera more bearable.
 
         /*Put up walls N-dimensionally. (Actually, they're just for show)*/
@@ -146,10 +163,12 @@ public class HigherDimensionPandemic extends SimpleApplication {
     public void simpleUpdate (float tpf) {
         /*Advance the simulation and update the positions of all beings.*/
         cs.advance(tpf);
+        time += 0.0002;
         for (Being b : beings) {
             b.updatePos(); // update position
             b.updateInfection(tpf);
         }
+        if (makeChart) updateChart(time); // update the chart
     }
 
     /**Arbitrarily pick 3 dimensions to display.*/
@@ -255,6 +274,8 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 if (p.timer < 0) {
                     p.status = 'R';
                     p.setColor(ParticleN.BLUE);
+                    infectedBeings--;
+                    recoveredBeings++;
                     updateColor();
                 }
             } else if (c == 'U') { // updateColor
@@ -264,4 +285,28 @@ public class HigherDimensionPandemic extends SimpleApplication {
             }
         }
     }
+
+    /**Class that makes a live chart using StdDraw. The problem is it will impact the FPS
+        It will update every tick and move 0.0002 in the board.
+    **/
+    private static void updateChart (float x) {
+
+        double x0 = 0;
+        double y0 = 0;
+        double y1 = (double)infectedBeings/(double)beings.length;
+        StdDraw.setPenColor(StdDraw.RED);
+        StdDraw.line(x, y0, x, y1);
+
+        y0 = y1;
+        y1 = y0+(double)susceptibleBeings/(double)beings.length;
+        StdDraw.setPenColor(StdDraw.GREEN);
+        StdDraw.line(x, y0, x, y1);
+
+        y0 = y1;
+        y1 = y0 + (double)recoveredBeings/(double)beings.length;
+        StdDraw.setPenColor(StdDraw.BLUE);
+        StdDraw.line(x, y0, x, y1);
+        /**Could probably make it a lot cleaned.*/
+    }
+
 }
