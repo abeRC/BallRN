@@ -120,10 +120,11 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 "java HigherDimensionalPandemic DIM PNUM\n" +
                 "where DIM is the number of dimensions and PNUM is the number of random\n" +
                 "particles to create.\n" +
-                "Extra options: " +
-                "   --space                     Use a space texture for the cube." +
-                "   --social-distancing         Restrict movement by 3/4." +
-                "   --max-social-distancing     Restrict movement by 7/8.");
+                "Extra options: \n" +
+                "   --chart                     Draw a chart using StdDraw.\n" +
+                "   --space                     Use a space texture for the cube.\n" +
+                "   --social-distancing         Restrict movement by 3/4.\n" +
+                "   --max-social-distancing     Restrict movement by 7/8.\n");
     }
 
     public static void main (String[] args) {
@@ -140,6 +141,10 @@ public class HigherDimensionPandemic extends SimpleApplication {
             for (int i = 2; i < args.length; i++) {
                 options.add(args[i].replaceAll("[^a-z]", "").toLowerCase());
             }
+        }
+
+        if (options.contains("chart")) {
+            makeChart = true;
         }
 
         /*Scientifically determine the correct dimensions to analyze.*/
