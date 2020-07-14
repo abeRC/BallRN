@@ -50,7 +50,8 @@ public class ParticleN {
         double[] v = new double[N];
 
         for (int i = 0; i < N; i++) {
-            r[i] = StdRandom.uniform(BORDERCOORDMIN, BORDERCOORDMAX);
+            /*Careful not to place anything out of the canvas!*/
+            r[i] = StdRandom.uniform(BORDERCOORDMIN+DEFAULTRADIUS, BORDERCOORDMAX-DEFAULTRADIUS);
             v[i] = StdRandom.uniform(-VELRANGE, VELRANGE);
         }
         this.r = r;
@@ -251,11 +252,6 @@ public class ParticleN {
             /*Impulse from normal forces.*/
             double magnitude = 2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
             double[] J = Couve.scale(magnitude/dist, dr);
-            /*Update velocities according to the impulse.*/
-        /*if (this.mass > DEFAULTMASS || that.mass > DEFAULTMASS) {
-            System.out.println("BRACE");
-            System.out.println("this:"+this.mass*J[0]+"  that:"+that.mass*J[0]);
-        }*/
 
             Couve.scaledIncrement(this.v, 1/this.mass, J);
             Couve.scaledIncrement(that.v, -1/that.mass, J);

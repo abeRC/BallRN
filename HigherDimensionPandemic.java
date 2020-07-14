@@ -12,6 +12,8 @@ import edu.princeton.cs.algs4.SET;
 import edu.princeton.cs.algs4.StdRandom;
 import edu.princeton.cs.algs4.StdDraw;
 
+import java.util.Arrays;
+
 
 /**
  * Simulates a higher-dimension pandemic and displays a 3D (3 possibly random dimensions
@@ -54,7 +56,8 @@ public class HigherDimensionPandemic extends SimpleApplication {
     private static int susceptibleBeings = 0;
     private static int recoveredBeings = 0;
     private static boolean makeChart = false;
-    private static Material spaceMat;
+    private static boolean DUMPWALLS = false;
+    private static Material spaceMat; // to avoid uninitialized error
     float time = 0;
 
     /**Implement extra methods to simulate a pandemic.*/
@@ -115,48 +118,81 @@ public class HigherDimensionPandemic extends SimpleApplication {
         }
     }
 
-    public static void printUsage () {
-        System.err.println("Simulate an N-dimensional pandemic with CollisionSystemRN.java,\n" +
+    /**Print program usage and all accepted flags.*/
+    public static void printUsage (int exitCode) {
+        String usage = "Simulate an N-dimensional pandemic with CollisionSystemRN.java,\n" +
                 "and display it with jMonkeyEngine.\n" +
-                "java HigherDimensionalPandemic DIM PNUM\n" +
+                "\n" +
+                "   java HigherDimensionalPandemic DIM PNUM\n" +
+                "\n" +
                 "where DIM is the number of dimensions and PNUM is the number of random\n" +
                 "particles to create.\n" +
                 "Extra options: \n" +
+                "   --help                      Print this information.\n" +
                 "   --chart                     Draw a chart using StdDraw.\n" +
                 "   --space                     Use a space texture for the cube.\n" +
                 "   --social-distancing         Restrict movement by 3/4.\n" +
-                "   --max-social-distancing     Restrict movement by 7/8.\n");
+                "   --max-social-distancing     Restrict movement by 7/8.\n" +
+                "   --dump-walls                Dump wall collision information to stdout.\n";
+        if (exitCode == 0) {
+            System.out.println(usage);
+        } else {
+            System.err.println(usage);
+        }
+        System.exit(exitCode);
+    }
+
+    /**Dump general information about this execution.*/
+    public static void dumpGeneral () {
+        System.out.println("DIM: "+DIM+"\n"+
+                "PNUM: "+NUM+"\n"+
+                "PRIDIM: "+ Arrays.toString(priDim)+"\n"
+        );
     }
 
     public static void main (String[] args) {
         if (args.length < 1) {
-            printUsage();
+            printUsage(1);
         }
 
+        for (int i = 0; i < args.length; i++) {
+            String parsed = args[i].replaceAll("[^a-z]", "").toLowerCase();
+            if (parsed.equals("help") || (i != 0 && i != 1)) {
+                options.add(parsed);
+            }
+        }
+
+        if (options.contains("help")) {
+            printUsage(0);
+        }
         DIM = Integer.parseInt(args[0]);
         if (DIM < 3) {
             throw new IllegalArgumentException("Invalid number of dimensions.");
         }
         NUM = Integer.parseInt(args[1]);
-        if (args.length >= 3) {
-            for (int i = 2; i < args.length; i++) {
-                options.add(args[i].replaceAll("[^a-z]", "").toLowerCase());
-            }
-        }
 
         if (options.contains("chart")) {
             makeChart = true;
         }
+        if (options.contains("dumpwalls")) {
+            DUMPWALLS = true;
+        }
+
 
         /*Scientifically determine the correct dimensions to analyze.*/
         pick3Dimensions();
+
+        /*Dump general info.*/
+        if (DUMPWALLS) {
+            dumpGeneral();
+        }
 
         /*Create higher physics.*/
         PartN[] parts = new PartN[NUM];
         for (int i = 0; i < parts.length; i++) {
             parts[i] = new PartN(DIM);
         }
-        cs = new CollisionSystemRN(parts, DIM);
+        cs = new CollisionSystemRN(parts, DIM, DUMPWALLS);
 
         /*Initiate application.*/
         HigherDimensionPandemic app = new HigherDimensionPandemic();
