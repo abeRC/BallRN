@@ -21,9 +21,12 @@ where DIM is the number of dimensions and PNUM is the number of random
 particles to create. 
 
 ### Accepted flags:  
- ` --help            Print this information. 
-  --chart           Draw a chart using StdDraw. 
-  --space           Use a space texture for the cube. 
-  --social-distancing     Restrict movement by 3/4. 
-  --max-social-distancing   Restrict movement by 7/8. 
-  --dump-walls         Dump wall collision information to stdout.`
+ ```
+  --help          			  Print this information. 
+  --chart          			  Draw a chart using StdDraw. 
+  --space           	   		  Use a space texture for the cube. 
+  --social-distancing   	 		  Restrict movement by 3/4. 
+  --max-social-distancing    		  Restrict movement by 7/8. 
+  --dump-walls         		 	   Dump wall collision information to stdout.
+ ```
+
