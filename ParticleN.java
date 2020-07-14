@@ -34,11 +34,9 @@ public class ParticleN {
         this.r = r.clone(); //defensive copy
         this.v = v.clone(); //defensive copy
         this.DIM = this.r.length;
-        assert this.DIM == this.v.length: "Particle creation failure. Position and velocity must have the same number of dimensions.";
         this.radius = radius;
         this.mass = mass;
         this.color = color.clone(); //defensive copy
-        assert this.color.length == 4 : "Particle color has the wrong length.";
     }
 
     /**
@@ -91,7 +89,7 @@ public class ParticleN {
     /**Prevent this particle from moving.*/
     public void immobilize () {
         savedMass = mass;
-        mass = 100000000000000d;
+        mass = INFINITY;
         for (int i = 0; i < DIM; i++) {
             v[i] = 0;
         }
@@ -101,6 +99,14 @@ public class ParticleN {
     public void free () {
         if (!Double.isNaN(savedMass)) {
             mass = savedMass;
+        }
+    }
+
+    /**Reflects the entire velocity vector of a particle (which only happens if
+     * it collides with an infinite mass particle).*/
+    private void reflect () {
+        for (int i = 0; i < DIM; i++) {
+            v[i] *= -1;
         }
     }
 
@@ -155,7 +161,6 @@ public class ParticleN {
      *         {@code Double.POSITIVE_INFINITY} if the particles will not collide
      */
     public double timeToHit (ParticleN that) {
-        assert this.DIM == that.DIM: "Particles have different translational degrees of freedom.";
         if (this == that) {
             return INFINITY;
         }
@@ -232,13 +237,29 @@ public class ParticleN {
         double dvdr = Couve.dotProduct(dv, dr);
         double dist = this.radius + that.radius;   // distance between particle centers at collision
 
-        /*Impulse from normal forces.*/
-        double magnitude = 2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
-        double[] J = Couve.scale(magnitude/dist, dr);
+        boolean oneIsImmobilized = Double.isInfinite(this.mass) || Double.isInfinite(that.mass);
 
-        /*Update velocities according to the impulse.*/
-        Couve.scaledIncrement(this.v, 1/this.mass, J);
-        Couve.scaledIncrement(that.v, -1/that.mass, J);
+        if (oneIsImmobilized) {
+            if (this.mass != INFINITY) {
+                this.reflect();
+            }
+            // One might be inside the other; idk.
+            if (that.mass != INFINITY) {
+                that.reflect();
+            }
+        } else {
+            /*Impulse from normal forces.*/
+            double magnitude = 2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
+            double[] J = Couve.scale(magnitude/dist, dr);
+            /*Update velocities according to the impulse.*/
+        /*if (this.mass > DEFAULTMASS || that.mass > DEFAULTMASS) {
+            System.out.println("BRACE");
+            System.out.println("this:"+this.mass*J[0]+"  that:"+that.mass*J[0]);
+        }*/
+
+            Couve.scaledIncrement(this.v, 1/this.mass, J);
+            Couve.scaledIncrement(that.v, -1/that.mass, J);
+        }
 
         /*Update collision counts.*/
         this.count++;
@@ -261,7 +282,6 @@ public class ParticleN {
      * @param N the number which identifies an axis that connects two opposite walls
      */
     public void bounceOffNWall (int N) {
-        assert 0<=N && N<DIM : "Invalid axis for wall collision.";
         v[N] = -v[N];
         count++;
     }

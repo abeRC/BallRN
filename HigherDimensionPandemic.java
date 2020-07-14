@@ -54,6 +54,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
     private static int susceptibleBeings = 0;
     private static int recoveredBeings = 0;
     private static boolean makeChart = false;
+    private static Material spaceMat;
     float time = 0;
 
     /**Implement extra methods to simulate a pandemic.*/
@@ -174,7 +175,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
     @Override
     public void simpleInitApp () {
 
-        if (makeChart) StdDraw.setCanvasSize(1500, 700);
+        if (makeChart) StdDraw.setCanvasSize(800, 100);
         flyCam.setMoveSpeed(7); // Make the camera more bearable.
         mouseInput.setCursorVisible(true);
 
@@ -236,19 +237,19 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 new Vector3f(0, -p, 0),
         };
 
-        Material mat, spaceMat;
         Box mesh = new Box(halfWallDistance, 2, halfWallDistance);
         // Starry background
-        spaceMat = new Material(assetManager,
-                "Common/MatDefs/Misc/Unshaded.j3md"); //default material
+
         if (options.contains("space")) {
+            spaceMat = new Material(assetManager,
+                "Common/MatDefs/Misc/Unshaded.j3md"); //default material
             Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
             spaceMat.setTexture("ColorMap", space);
         }
 
         for (int i = 0; i < 6; i++) {
             // Randomly-colored opaque walls
-            mat = new Material(assetManager,
+            Material mat = new Material(assetManager,
                     "Common/MatDefs/Misc/Unshaded.j3md"); //default material
             mat.setColor("Color", ColorRGBA.randomColor());
 
