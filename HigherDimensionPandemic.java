@@ -123,7 +123,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
         String usage = "Simulate an N-dimensional pandemic with CollisionSystemRN.java,\n" +
                 "and display it with jMonkeyEngine.\n" +
                 "\n" +
-                "   java HigherDimensionalPandemic DIM PNUM\n" +
+                "   java HigherDimensionalPandemic DIM PNUM [FLAGS]\n" +
                 "\n" +
                 "where DIM is the number of dimensions and PNUM is the number of random\n" +
                 "particles to create.\n" +
@@ -212,8 +212,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
     public void simpleInitApp () {
 
         if (makeChart) StdDraw.setCanvasSize(800, 100);
-        flyCam.setMoveSpeed(7); // Make the camera more bearable.
-        mouseInput.setCursorVisible(true);
+        flyCam.setMoveSpeed(8); // Make the camera more bearable.
 
         /*Put up walls N-dimensionally. (Actually, they're just for show)*/
         makewalls();

@@ -10,7 +10,7 @@ public class CollisionSystemRN {
 
 
     /*TODO B1. preprocessing*/
-
+    private final boolean DUMPWALLS;
     private final int DIM;
     private double t = 0.0; // simulation clock time
     private MinPQ<Event> pq = new MinPQ<Event>(); // the priority queue
@@ -23,9 +23,10 @@ public class CollisionSystemRN {
      * @param particles the array of particles
      * @param N the number of spatial dimensions
      */
-    public CollisionSystemRN (ParticleN[] particles, int N) {
+    public CollisionSystemRN (ParticleN[] particles, int N, boolean DUMPWALLS) {
         this.particles = particles.clone();   // defensive copy
         this.DIM = N;
+        this.DUMPWALLS = DUMPWALLS;
 
         /*Initialize PQ with collision events.*/
         for (ParticleN part : particles) {
@@ -103,12 +104,18 @@ public class CollisionSystemRN {
                 predict(b);
             } else {
                 a.bounceOffNWall(e.N); // particle-wall collision
+                if (DUMPWALLS) {
+                    System.out.println(t+" "+e.N+" "+this.hashCode());
+                }
                 predict(a);
             }
 
             /*If the current time becomes equal to (or slightly greater) than upto,
             * then we have done enough advancing.*/
             if (t >= upto) {
+                if (t > 120) {
+                    System.err.println("JA DEU");
+                }
                 return;
             }
         }
@@ -160,7 +167,7 @@ public class CollisionSystemRN {
 
         /**Has any collision occurred between when event was created and now?
          * If so, then the event has been invalidated.*/
-        public boolean isValid() {
+        public boolean isValid () {
             assert a != null : "The particle a shouldn't be null.";
             boolean validA = (a.count() == countA);
             boolean validB = (b == null || (b.count() == countB));

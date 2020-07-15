@@ -251,17 +251,17 @@ public class ParticleN {
         } else {
             /*Impulse from normal forces.*/
             double magnitude = 2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
-            double[] J = Couve.scale(magnitude/dist, dr);
+            //double[] J = Couve.scale(magnitude/dist, dr);
 
-            Couve.scaledIncrement(this.v, 1/this.mass, J);
-            Couve.scaledIncrement(that.v, -1/that.mass, J);
+            Couve.scaledIncrement(this.v, 1/this.mass * magnitude/dist, dr);
+            Couve.scaledIncrement(that.v, -1/that.mass * magnitude/dist, dr);
         }
 
         /*Update collision counts.*/
         this.count++;
         that.count++;
 
-        /*Overriding classes have the chance to do something here.*/
+        /*Overriding subclasses have the chance to do something here.*/
         this.handleBinaryCollision(that);
     }
 
