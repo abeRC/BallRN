@@ -22,6 +22,7 @@ public class CollisionSystemRN {
      *
      * @param particles the array of particles
      * @param N the number of spatial dimensions
+     * @param DUMPWALLS whether to dump information about particle-wall collisions
      */
     public CollisionSystemRN (ParticleN[] particles, int N, boolean DUMPWALLS) {
         this.particles = particles.clone();   // defensive copy
@@ -34,6 +35,18 @@ public class CollisionSystemRN {
             predict(part);
         }
     }
+
+    /**
+     * Initializes a system with the specified collection of particles.
+     * The individual particles will be mutated during the simulation.
+     *
+     * @param particles the array of particles
+     * @param N the number of spatial dimensions
+     */
+    public CollisionSystemRN (ParticleN[] particles, int N) {
+        this(particles, N, false);
+    }
+
 
     /** Updates the priority queue with all new events for particle a.*/
     private void predict (ParticleN a) {
@@ -105,7 +118,7 @@ public class CollisionSystemRN {
             } else {
                 a.bounceOffNWall(e.N); // particle-wall collision
                 if (DUMPWALLS) {
-                    System.out.println(t+" "+e.N+" "+this.hashCode());
+                    System.out.println(t+" "+e.N+" "+a.hashCode());
                 }
                 predict(a);
             }

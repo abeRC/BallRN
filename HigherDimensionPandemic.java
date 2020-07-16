@@ -20,6 +20,11 @@ import java.util.Arrays;
  * out of N) view of it with jMonkeyEngine.
  * */
 public class HigherDimensionPandemic extends SimpleApplication {
+    /**TODO 
+    material to aid visiblity?
+    fix frontal collision assumption in reflection (assume mass=1 and normalzie velocity or soemthing idk)
+    **/
+    
     /**TODO A1. Set up program arguments (dimension, number of particles, radius, etc?)
      *  Take optional parameters starting from no. of particles.*/
     /**TODO A2. attach the walls to a node and possibly translate it so it's
@@ -129,11 +134,13 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 "particles to create.\n" +
                 "Extra options: \n" +
                 "   --help                      Print this information.\n" +
+                "   --fullscreen                Display in fullscreen.\n" +
                 "   --chart                     Draw a chart using StdDraw.\n" +
                 "   --space                     Use a space texture for the cube.\n" +
                 "   --social-distancing         Restrict movement by 3/4.\n" +
                 "   --max-social-distancing     Restrict movement by 7/8.\n" +
                 "   --dump-walls                Dump wall collision information to stdout.\n";
+                
         if (exitCode == 0) {
             System.out.println(usage);
         } else {
@@ -177,7 +184,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
         if (options.contains("dumpwalls")) {
             DUMPWALLS = true;
         }
-
+        
 
         /*Scientifically determine the correct dimensions to analyze.*/
         pick3Dimensions();
@@ -201,6 +208,11 @@ public class HigherDimensionPandemic extends SimpleApplication {
         as.put("VSync", true);
         as.put("Width", 1280);
         as.put("Height", 720);
+        if (options.contains("fullscreen")) {
+            as.put("Fullscreen",true);
+            as.put("Width", 1920);
+            as.put("Height", 1080);
+        }
         app.setShowSettings(false); // Uncomment to skip the initial settings popup
         app.setSettings(as);
         app.start();
@@ -212,7 +224,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
     public void simpleInitApp () {
 
         if (makeChart) StdDraw.setCanvasSize(800, 100);
-        flyCam.setMoveSpeed(8); // Make the camera more bearable.
+        flyCam.setMoveSpeed(7.1f); // Make the camera more bearable.
 
         /*Put up walls N-dimensionally. (Actually, they're just for show)*/
         makewalls();
