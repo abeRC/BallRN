@@ -13,7 +13,7 @@ public class Couve {
         scaledIncrement(a, c, b);
         System.out.println("novo a:" + Arrays.toString(a));
         System.out.println(dotProduct(a, b));
-        System.out.println(Arrays.toString(scale(c, a)));
+        //System.out.println(Arrays.toString(scale(c, a)));
         Double[] arr = {4.2, 2.3333, 1., 9.};
         printArray(arr);
     }
@@ -27,13 +27,19 @@ public class Couve {
         return produtoEscalar;
     }
 
-    public static double[] scale(double s, double[] arr) {
+    /*public static double[] scale(double s, double[] arr) {
         double[] ret = null;
         ret = new double[arr.length];
         for (int i = 0; i < arr.length; i++)
             ret[i] = s * arr[i];
         return ret;
+    }*/
+    public static void scale (double s, double[] arr) {
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = s * arr[i];
+        }
     }
+
 
     private static void printArray(Object[] arr) {
         for (int i = 0; i < arr.length; i++)

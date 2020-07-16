@@ -8,8 +8,8 @@ import edu.princeton.cs.algs4.MinPQ;
  */
 public class CollisionSystemRN {
 
-
     /*TODO B1. preprocessing*/
+    private static final double MINF = Double.NEGATIVE_INFINITY;
     private final boolean DUMPWALLS;
     private final int DIM;
     private double t = 0.0; // simulation clock time
@@ -84,24 +84,30 @@ public class CollisionSystemRN {
         while (!pq.isEmpty()) {
             /*Get impending event; discard if invalidated.*/
             Event e = pq.min();
+            System.out.println(e);
             if (!e.isValid()) {
                 pq.delMin();
                 continue;
             }
-            assert t <= upto : "Time has advanced too much!";
 
             /*Update all positions up to the time of collision.*/
             double tfinal;
-            if (e.time > upto) {
-                tfinal = upto;
-                done = true;
-            } else {
-                tfinal = e.time;
+            if (e.time != MINF) { // e.time == -inf indicates a getOut event
+                if (e.time > upto) {
+                    tfinal = upto;
+                    done = true;
+                } else {
+                    tfinal = e.time;
+                }
+                for (ParticleN part : particles) {
+                    if (Double.isInfinite(tfinal-t)) {
+                        System.out.println("infinite movement here");
+                        System.exit(1);
+                    }
+                    part.move(tfinal - t);
+                }
+                t = tfinal;
             }
-            for (ParticleN part : particles) {
-                part.move(tfinal - t);
-            }
-            t = tfinal;
 
             /*Process the collision and update the PQ with new collisions.
             * But if we're done, then forget it, I'm leaving!*/
@@ -110,29 +116,46 @@ public class CollisionSystemRN {
             }
             ParticleN a = e.a;
             ParticleN b = e.b;
-            assert a != null : "The particle A shouldn't be null.";
             if (b != null) {
-                a.bounceOff(b); // particle-particle collision
-                predict(a);
-                predict(b);
+                if (e.time == MINF) { /*One particle is inside the other*/
+                    a.getOut(b);
+                    //predict(a);
+                    //predict(b);
+                } else {
+                    if (e.time == MINF) {
+                        System.out.println("infinite movement inside the else");
+                        System.exit(1);
+                    }
+
+                    a.bounceOff(b); /*Particle-particle collision.*/
+                    predict(a);
+                    predict(b);
+                }
             } else {
-                a.bounceOffNWall(e.N); // particle-wall collision
+                /*Particle-wall collision.*/
+                a.bounceOffNWall(e.N);
                 if (DUMPWALLS) {
                     System.out.println(t+" "+e.N+" "+a.hashCode());
                 }
                 predict(a);
             }
 
+            /*Remember to exclude the event if we've processed it.*/
+            if (pq.isEmpty()) {
+                System.out.println("it shouldn't be empty");
+                throw new ArrayIndexOutOfBoundsException("it shouldn't be empty");
+            } else {
+                pq.delMin();
+            }
+
             /*If the current time becomes equal to (or slightly greater) than upto,
             * then we have done enough advancing.*/
             if (t >= upto) {
-                if (t > 120) {
-                    System.err.println("JA DEU");
-                }
                 return;
             }
         }
-        if (pq.isEmpty()) System.err.println("Empty priority queue, can you believe it!?!?!?!"); //assert
+        System.out.println("it shouldn't be empty");
+        throw new ArrayIndexOutOfBoundsException("it shouldn't be empty");
     }
 
 
@@ -185,6 +208,29 @@ public class CollisionSystemRN {
             boolean validA = (a.count() == countA);
             boolean validB = (b == null || (b.count() == countB));
             return validA && validB;
+        }
+        /**String representation.*/
+        @Override
+        public String toString() {
+            if (b == null) { // wall collision
+                return "Event{" +
+                        "time=" + time +
+                        ", a=" + a.hashCode() +
+                        ", b= null" +
+                        ", N=" + N +
+                        ", countA=" + countA +
+                        ", countB=" + countB +
+                        '}';
+            } else { // binary collision
+                return "Event{" +
+                        "time=" + time +
+                        ", a=" + a.hashCode() +
+                        ", b=" + b.hashCode() +
+                        ", N=" + N +
+                        ", countA=" + countA +
+                        ", countB=" + countB +
+                        '}';
+            }
         }
     }
 }
