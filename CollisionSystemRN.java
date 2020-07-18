@@ -9,6 +9,15 @@ import edu.princeton.cs.algs4.MinPQ;
 public class CollisionSystemRN {
 
     /*TODO B1. preprocessing*/
+    // TODO: [particle limit] what if someone tries to spawn more particles than fit inside the volume? maybe set a cap?
+    //      complication: Highest [sphere packing] density is known only in case of 1, 2, 3, 8 and 24 dimensions.
+    //      also, the radii could be different
+    //      maybe guess that getting >70% to work is likely too hard to bother with?
+    // TODO: fix particles escaping the world bounds (null it and handle nulls, maybe)
+    // TODO: completely fix particles inside other particles
+
+
+
     private static final double MINF = Double.NEGATIVE_INFINITY;
     private final boolean DUMPWALLS;
     private final int DIM;
@@ -25,13 +34,22 @@ public class CollisionSystemRN {
      * @param DUMPWALLS whether to dump information about particle-wall collisions
      */
     public CollisionSystemRN (ParticleN[] particles, int N, boolean DUMPWALLS) {
+        if (ParticleN.DEFAULTRADIUS >= (ParticleN.BORDERCOORDMAX-ParticleN.BORDERCOORDMIN)/10) {
+            System.err.println("This program cannot deal with highly energetic / non-physical systems.");
+        }
         this.particles = particles.clone();   // defensive copy
         this.DIM = N;
         this.DUMPWALLS = DUMPWALLS;
 
         /*Initialize PQ with collision events.*/
-        for (ParticleN part : particles) {
-            assert part.DIM == N : "A particle has the wrong number of dimensions. All particles must be N-dimensional";
+        for (int i = 0; i < particles.length; i++) {
+            ParticleN part = particles[i];
+
+            if (part.DIM != N) {
+                throw new IndexOutOfBoundsException("A particle has the wrong number of dimensions. All particles must be N-dimensional");
+            }
+
+            /*Fill the PQ with this particle's predicted (possible) collisions.*/
             predict(part);
         }
     }
@@ -47,6 +65,14 @@ public class CollisionSystemRN {
         this(particles, N, false);
     }
 
+    /*Marks events in the PQ containing particle a as invalid.*/
+    private void clearPQof (ParticleN a) {
+        for (Event e : pq) {
+            if (e.a == a || e.b == a) {
+                e.knownInvalid = true;
+            }
+        }
+    }
 
     /** Updates the priority queue with all new events for particle a.*/
     private void predict (ParticleN a) {
@@ -84,7 +110,6 @@ public class CollisionSystemRN {
         while (!pq.isEmpty()) {
             /*Get impending event; discard if invalidated.*/
             Event e = pq.min();
-            System.out.println(e);
             if (!e.isValid()) {
                 pq.delMin();
                 continue;
@@ -100,10 +125,6 @@ public class CollisionSystemRN {
                     tfinal = e.time;
                 }
                 for (ParticleN part : particles) {
-                    if (Double.isInfinite(tfinal-t)) {
-                        System.out.println("infinite movement here");
-                        System.exit(1);
-                    }
                     part.move(tfinal - t);
                 }
                 t = tfinal;
@@ -114,19 +135,17 @@ public class CollisionSystemRN {
             if (done) {
                 return;
             }
+
+            /*Starting here, the event is guaranteed to be processed.*/
+            // System.out.println(e);
             ParticleN a = e.a;
             ParticleN b = e.b;
             if (b != null) {
                 if (e.time == MINF) { /*One particle is inside the other*/
                     a.getOut(b);
-                    //predict(a);
+                    //predict(a); //erase
                     //predict(b);
                 } else {
-                    if (e.time == MINF) {
-                        System.out.println("infinite movement inside the else");
-                        System.exit(1);
-                    }
-
                     a.bounceOff(b); /*Particle-particle collision.*/
                     predict(a);
                     predict(b);
@@ -141,22 +160,17 @@ public class CollisionSystemRN {
             }
 
             /*Remember to exclude the event if we've processed it.*/
-            if (pq.isEmpty()) {
-                System.out.println("it shouldn't be empty");
-                throw new ArrayIndexOutOfBoundsException("it shouldn't be empty");
-            } else {
-                pq.delMin();
-            }
+            pq.delMin();
 
-            /*If the current time becomes equal to (or slightly greater) than upto,
+            /*If the current time becomes equal to upto,
             * then we have done enough advancing.*/
+            assert t <= upto : "t is greater than upto at a point of the loop where it shouldn't be.";
             if (t >= upto) {
                 return;
             }
         }
-        System.out.println("it shouldn't be empty");
-        throw new ArrayIndexOutOfBoundsException("it shouldn't be empty");
     }
+
 
 
     /**
@@ -172,6 +186,7 @@ public class CollisionSystemRN {
         final ParticleN a, b; // particles involved in event, possibly null
         private final int N; // axis in which a particle-wall collision occurred
         private final int countA, countB; // collision counts at event creation
+        private boolean knownInvalid = false;
 
 
         /**
@@ -207,7 +222,8 @@ public class CollisionSystemRN {
             assert a != null : "The particle a shouldn't be null.";
             boolean validA = (a.count() == countA);
             boolean validB = (b == null || (b.count() == countB));
-            return validA && validB;
+
+            return !knownInvalid && validA && validB;
         }
         /**String representation.*/
         @Override

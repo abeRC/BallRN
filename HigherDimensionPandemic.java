@@ -1,7 +1,6 @@
 import com.jme3.app.SimpleApplication;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
-import com.jme3.math.MathUtils;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
@@ -20,11 +19,9 @@ import java.util.Arrays;
  * out of N) view of it with jMonkeyEngine.
  * */
 public class HigherDimensionPandemic extends SimpleApplication {
-    /**TODO 
-    material to aid visiblity?
-    fix frontal collision assumption in reflection (assume mass=1 and normalzie velocity or soemthing idk)
-    **/
-    
+    // TODO material to aid visiblity?
+
+
     /**TODO A1. Set up program arguments (dimension, number of particles, radius, etc?)
      *  Take optional parameters starting from no. of particles.*/
     /**TODO A2. attach the walls to a node and possibly translate it so it's
@@ -140,7 +137,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 "   --social-distancing         Restrict movement by 3/4.\n" +
                 "   --max-social-distancing     Restrict movement by 7/8.\n" +
                 "   --dump-walls                Dump wall collision information to stdout.\n";
-                
+
         if (exitCode == 0) {
             System.out.println(usage);
         } else {
@@ -184,7 +181,6 @@ public class HigherDimensionPandemic extends SimpleApplication {
         if (options.contains("dumpwalls")) {
             DUMPWALLS = true;
         }
-        
 
         /*Scientifically determine the correct dimensions to analyze.*/
         pick3Dimensions();
