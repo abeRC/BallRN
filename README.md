@@ -27,6 +27,9 @@ particles to create.
   --space           	   		  Use a space texture for the cube. 
   --social-distancing   	 		  Restrict movement by 3/4. 
   --max-social-distancing    		  Restrict movement by 7/8. 
-  --dump-walls         		 	   Dump wall collision information to stdout.
+  --dump-walls         		 	  Dump wall collision information to stdout.
  ```
 
+### NOTE: 
+
+If `ParticleN.DEFAULTRADIUS` is set to large-ish values, the program will go crazy. The (set of) fix(es) needed is pretty involved.
