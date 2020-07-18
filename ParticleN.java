@@ -6,8 +6,9 @@ import java.util.Arrays;
 /**
  *  A particle moving in a box,
  *  with a given position, velocity, radius, and mass. Methods are provided
- *  for moving the particle and for predicting and resolvling elastic
- *  collisions with vertical walls, horizontal walls, and other particles.
+ *  for moving the particle and for predicting and resolving elastic
+ *  collisions with walls and other particles.
+ *  It is assumed that the particle is inside a symmetric box centered at 0.
  */
 public class ParticleN {
     public static final double BORDERCOORDMAX = 20.0; //1 for stddraw
@@ -18,14 +19,10 @@ public class ParticleN {
     private static final double INFINITY = Double.POSITIVE_INFINITY;
     private static final double MINF = Double.NEGATIVE_INFINITY;
     private static final double VELRANGE = 10; //0.005 for stddraw
-    private static final double DEFAULTRADIUS = 1; //0.02 for stddraw
+    private static final double DEFAULTRADIUS = 5; //0.02 for stddraw
     private static final double DEFAULTMASS = 0.5;
     private static final float[] DEFAULTCOLOR = new float[]{0, 1, 0, 1}; //green
-
-
-
-    private static int GETOUTCNT = 0;
-
+    private static final double EPSILON = 0.005;
 
     public final int DIM; //number of translational degrees of freedom
     public final double radius;
@@ -36,9 +33,10 @@ public class ParticleN {
     private int count; // number of collisions so far
     private double savedMass = Double.NaN;
 
-    // TODO: are overlapping particles a problem?
-    // TODO: what if someone tries to spawn more particles than fit inside the volume? maybe set a cap?
+    // TODO: make getOut smooth
+    // TODO: are particles at the exact same position a problem?
     // TODO: should we always update both collision counts? does it matter?
+    // TODO: fix out of bounds particles in a nicer way
 
     /**
      * Initializes a particle with the specified position, velocity, radius, mass, and color.
@@ -116,19 +114,38 @@ public class ParticleN {
         }
     }
 
+    /**Makes sure this particle is inside the world bounds,
+     * returning {@code true} if something was done.
+     * That is done by teleporting it to 0.*/
+    public boolean assureInsideBounds () {
+        // unpretty solution
+        boolean didSomething = false;
+        for (int i = 0; i < DIM; i++) {
+            if (r[i] - this.radius < BORDERCOORDMIN - EPSILON/100  || r[i] + this.radius > BORDERCOORDMAX + EPSILON/100 ) {
+                didSomething = true;
+                r[i] = 0;
+            }
+        }
+        return didSomething;
+    }
+
     /**
      * Moves this particle in a straight line (based on its velocity)
      * for the specified amount of time.
+     * Also checks if it's inside the bounds of the cage and, if it isn't,
+     * teleports it back to 0.
      *
      * @param  dt the amount of time
      */
     public void move (double dt) {
-        if (dt == MINF) {
+        // TODO: fix out of bounds particles in a nicer way
+
+        if (dt == MINF) { //erase
             System.out.println("infinite movement1");
             System.exit(1);
         }
         if (Double.isInfinite(dt)) {
-            System.out.println("inf mov 2");
+            System.out.println("inf mov 2"); //erase
             System.exit(1);
         }
         Couve.scaledIncrement(r, dt, v); //r += v*dt
@@ -194,9 +211,9 @@ public class ParticleN {
 
         double drdr = Couve.dotProduct(dr, dr);
         double sigma = this.radius + that.radius;
-        // TODO: are overlapping particles a problem?
+
         if (drdr < sigma*sigma) {
-            System.out.println("overlapping particles!");
+            // overlapping particles!
             return MINF;
         }
         double d = (dvdr*dvdr) - dvdv * (drdr - sigma*sigma);
@@ -255,7 +272,6 @@ public class ParticleN {
             assert false : "collision between 2 fixed particles";
             // might happen if they spawn inside one another
             // what if someone tries to spawn more particles than fit inside the volume?
-            // we should also deal with overlapping particles
             return;
         }
 
@@ -264,7 +280,6 @@ public class ParticleN {
         double[] dv = ParticleN.deltaV(this, that);
         double dvdr = Couve.dotProduct(dv, dr);
         double dist = this.radius + that.radius;   // distance between particle centers at collision
-        /*TODO This is only correct for frontal collisions...?*/
 
         /*Deal with infinities and update the velocities.*/
         boolean thisIsImmobilized = Double.isInfinite(this.mass);
@@ -312,29 +327,35 @@ public class ParticleN {
         ;
     }
 
-    /**Separates the two particles.*/
+    /**Returns true if this particle is inside that particle.*/
+    public boolean isInside (ParticleN that) {
+        double[] dr = ParticleN.deltaR(this, that); // difference in current position
+
+        double drdr = Couve.dotProduct(dr, dr); // distance^2 between particles
+        double combinedRadius = this.radius + that.radius;
+
+        return (drdr < combinedRadius*combinedRadius - EPSILON);
+    }
+
+    /**Separates the two particles if one is inside the other.*/
     public void getOut (ParticleN that) {
-        // TODO: make getOut smooth and make it work if r1 == r2
-        GETOUTCNT++;
-        if (GETOUTCNT > 50) System.exit(1);
-        double dist = this.radius + that.radius;   // distance between particle centers at collision
+        // TODO: are particles at the exact same position a problem?
+        // TODO: make getOut smooth
+
+        if (this == that) {
+            throw new IllegalArgumentException("Trying to separate this particle from itself!");
+        }
+
+        double combinedRadius = this.radius + that.radius;
         double[] dr = ParticleN.deltaR(this, that);
         for (int i = 0; i < dr.length; i++) {
             if (dr[i] == 0) {
-                System.out.println("exactly equal!!");
-                System.out.println(Arrays.toString(dr));
-                System.exit(1);
+                System.out.println("exactly equal!!"+Arrays.toString(dr));
             }
         }
 
-        // Might look better if switched around?
-        System.out.println("SEPARATING PARTICLES!  radius1: "+this.radius+" radius2:"+that.radius);
-        System.out.println("before (r1): "+Arrays.toString(this.r));
-        System.out.println("before (r2): "+Arrays.toString(that.r));
-        Couve.scaledIncrement(this.r, -that.radius / dist, dr);
-        Couve.scaledIncrement(that.r, this.radius / dist, dr);
-        System.out.println("after (r1): "+Arrays.toString(this.r));
-        System.out.println("after (r2): "+Arrays.toString(that.r));
+        Couve.scaledIncrement(this.r, -that.radius / combinedRadius, dr);
+        Couve.scaledIncrement(that.r, this.radius / combinedRadius, dr);
     }
 
     /**
@@ -347,6 +368,21 @@ public class ParticleN {
     public void bounceOffNWall (int N) {
         v[N] = -v[N];
         count++;
+    }
+
+    /**Prints general information about this particle.*/
+    @Override
+    public String toString() {
+        return "ParticleN{" +
+                // "DIM=" + DIM +
+                ", radius=" + radius +
+                ", mass=" + mass +
+                ", r=" + Arrays.toString(r) +
+                // ", v=" + Arrays.toString(v) +
+                // ", color=" + Arrays.toString(color) +
+                ", count=" + count +
+                // ", savedMass=" + savedMass +
+                '}';
     }
 }
 
