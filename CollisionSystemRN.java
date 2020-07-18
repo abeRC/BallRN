@@ -8,8 +8,17 @@ import edu.princeton.cs.algs4.MinPQ;
  */
 public class CollisionSystemRN {
 
-
     /*TODO B1. preprocessing*/
+    // TODO: [particle limit] what if someone tries to spawn more particles than fit inside the volume? maybe set a cap?
+    //      complication: Highest [sphere packing] density is known only in case of 1, 2, 3, 8 and 24 dimensions.
+    //      also, the radii could be different
+    //      maybe guess that getting >70% to work is likely too hard to bother with?
+    // TODO: fix particles escaping the world bounds (null it and handle nulls, maybe)
+    // TODO: completely fix particles inside other particles
+
+
+
+    private static final double MINF = Double.NEGATIVE_INFINITY;
     private final boolean DUMPWALLS;
     private final int DIM;
     private double t = 0.0; // simulation clock time
@@ -25,13 +34,22 @@ public class CollisionSystemRN {
      * @param DUMPWALLS whether to dump information about particle-wall collisions
      */
     public CollisionSystemRN (ParticleN[] particles, int N, boolean DUMPWALLS) {
+        if (ParticleN.DEFAULTRADIUS >= (ParticleN.BORDERCOORDMAX-ParticleN.BORDERCOORDMIN)/10) {
+            System.err.println("This program cannot deal with highly energetic / non-physical systems.");
+        }
         this.particles = particles.clone();   // defensive copy
         this.DIM = N;
         this.DUMPWALLS = DUMPWALLS;
 
         /*Initialize PQ with collision events.*/
-        for (ParticleN part : particles) {
-            assert part.DIM == N : "A particle has the wrong number of dimensions. All particles must be N-dimensional";
+        for (int i = 0; i < particles.length; i++) {
+            ParticleN part = particles[i];
+
+            if (part.DIM != N) {
+                throw new IndexOutOfBoundsException("A particle has the wrong number of dimensions. All particles must be N-dimensional");
+            }
+
+            /*Fill the PQ with this particle's predicted (possible) collisions.*/
             predict(part);
         }
     }
@@ -47,6 +65,14 @@ public class CollisionSystemRN {
         this(particles, N, false);
     }
 
+    /*Marks events in the PQ containing particle a as invalid.*/
+    private void clearPQof (ParticleN a) {
+        for (Event e : pq) {
+            if (e.a == a || e.b == a) {
+                e.knownInvalid = true;
+            }
+        }
+    }
 
     /** Updates the priority queue with all new events for particle a.*/
     private void predict (ParticleN a) {
@@ -88,52 +114,63 @@ public class CollisionSystemRN {
                 pq.delMin();
                 continue;
             }
-            assert t <= upto : "Time has advanced too much!";
 
             /*Update all positions up to the time of collision.*/
             double tfinal;
-            if (e.time > upto) {
-                tfinal = upto;
-                done = true;
-            } else {
-                tfinal = e.time;
+            if (e.time != MINF) { // e.time == -inf indicates a getOut event
+                if (e.time > upto) {
+                    tfinal = upto;
+                    done = true;
+                } else {
+                    tfinal = e.time;
+                }
+                for (ParticleN part : particles) {
+                    part.move(tfinal - t);
+                }
+                t = tfinal;
             }
-            for (ParticleN part : particles) {
-                part.move(tfinal - t);
-            }
-            t = tfinal;
 
             /*Process the collision and update the PQ with new collisions.
             * But if we're done, then forget it, I'm leaving!*/
             if (done) {
                 return;
             }
+
+            /*Starting here, the event is guaranteed to be processed.*/
+            // System.out.println(e);
             ParticleN a = e.a;
             ParticleN b = e.b;
-            assert a != null : "The particle A shouldn't be null.";
             if (b != null) {
-                a.bounceOff(b); // particle-particle collision
-                predict(a);
-                predict(b);
+                if (e.time == MINF) { /*One particle is inside the other*/
+                    a.getOut(b);
+                    //predict(a); //erase
+                    //predict(b);
+                } else {
+                    a.bounceOff(b); /*Particle-particle collision.*/
+                    predict(a);
+                    predict(b);
+                }
             } else {
-                a.bounceOffNWall(e.N); // particle-wall collision
+                /*Particle-wall collision.*/
+                a.bounceOffNWall(e.N);
                 if (DUMPWALLS) {
                     System.out.println(t+" "+e.N+" "+a.hashCode());
                 }
                 predict(a);
             }
 
-            /*If the current time becomes equal to (or slightly greater) than upto,
+            /*Remember to exclude the event if we've processed it.*/
+            pq.delMin();
+
+            /*If the current time becomes equal to upto,
             * then we have done enough advancing.*/
+            assert t <= upto : "t is greater than upto at a point of the loop where it shouldn't be.";
             if (t >= upto) {
-                if (t > 120) {
-                    System.err.println("JA DEU");
-                }
                 return;
             }
         }
-        if (pq.isEmpty()) System.err.println("Empty priority queue, can you believe it!?!?!?!"); //assert
     }
+
 
 
     /**
@@ -149,6 +186,7 @@ public class CollisionSystemRN {
         final ParticleN a, b; // particles involved in event, possibly null
         private final int N; // axis in which a particle-wall collision occurred
         private final int countA, countB; // collision counts at event creation
+        private boolean knownInvalid = false;
 
 
         /**
@@ -184,7 +222,31 @@ public class CollisionSystemRN {
             assert a != null : "The particle a shouldn't be null.";
             boolean validA = (a.count() == countA);
             boolean validB = (b == null || (b.count() == countB));
-            return validA && validB;
+
+            return !knownInvalid && validA && validB;
+        }
+        /**String representation.*/
+        @Override
+        public String toString() {
+            if (b == null) { // wall collision
+                return "Event{" +
+                        "time=" + time +
+                        ", a=" + a.hashCode() +
+                        ", b= null" +
+                        ", N=" + N +
+                        ", countA=" + countA +
+                        ", countB=" + countB +
+                        '}';
+            } else { // binary collision
+                return "Event{" +
+                        "time=" + time +
+                        ", a=" + a.hashCode() +
+                        ", b=" + b.hashCode() +
+                        ", N=" + N +
+                        ", countA=" + countA +
+                        ", countB=" + countB +
+                        '}';
+            }
         }
     }
 }

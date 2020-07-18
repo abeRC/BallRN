@@ -1,10 +1,13 @@
 import edu.princeton.cs.algs4.StdRandom;
 
+import java.util.Arrays;
+
 /**
  *  A particle moving in a box,
  *  with a given position, velocity, radius, and mass. Methods are provided
- *  for moving the particle and for predicting and resolvling elastic
- *  collisions with vertical walls, horizontal walls, and other particles.
+ *  for moving the particle and for predicting and resolving elastic
+ *  collisions with walls and other particles.
+ *  It is assumed that the particle is inside a symmetric box centered at 0.
  */
 public class ParticleN {
     public static final double BORDERCOORDMAX = 20.0; //1 for stddraw
@@ -13,9 +16,10 @@ public class ParticleN {
     public static final float[] RED = new float[]{1, 0, 0, 1};
     public static final float[] GREEN = new float[]{0, 1, 0, 1};
     private static final double INFINITY = Double.POSITIVE_INFINITY;
-    private static final double VELRANGE = 10; //0.005 for stddraw
-    private static final double DEFAULTRADIUS = 1; //0.02 for stddraw
-    private static final double DEFAULTMASS = 0.5;
+    private static final double MINF = Double.NEGATIVE_INFINITY;
+    private static final double VELRANGE = 5; //0.005 for stddraw
+    public static final double DEFAULTRADIUS = 1; //0.02 for stddraw
+    public static final double DEFAULTMASS = 0.5;
     private static final float[] DEFAULTCOLOR = new float[]{0, 1, 0, 1}; //green
 
     public final int DIM; //number of translational degrees of freedom
@@ -26,6 +30,11 @@ public class ParticleN {
     private float[] color; // array of red, green, blue, alpha values
     private int count; // number of collisions so far
     private double savedMass = Double.NaN;
+
+    // TODO: make getOut smooth
+    // TODO: are particles at the exact same position a problem?
+    // TODO: should we always update both collision counts? does it matter?
+    // TODO: fix out of bounds particles in a nicer way
 
     /**
      * Initializes a particle with the specified position, velocity, radius, mass, and color.
@@ -103,14 +112,6 @@ public class ParticleN {
         }
     }
 
-    /**Reflects the entire velocity vector of a particle (which only happens if
-     * it collides with an infinite mass particle).*/
-    private void reflect () {
-        for (int i = 0; i < DIM; i++) {
-            v[i] *= -1;
-        }
-    }
-
     /**
      * Moves this particle in a straight line (based on its velocity)
      * for the specified amount of time.
@@ -181,7 +182,11 @@ public class ParticleN {
 
         double drdr = Couve.dotProduct(dr, dr);
         double sigma = this.radius + that.radius;
-        // if (drdr < sigma*sigma) StdOut.println("overlapping particles");
+        // TODO: are overlapping particles a problem?
+        if (drdr < sigma*sigma) {
+            System.err.println("overlapping particles!");
+            return MINF;
+        }
         double d = (dvdr*dvdr) - dvdv * (drdr - sigma*sigma);
         if (d < 0) {
             return INFINITY;
@@ -229,37 +234,61 @@ public class ParticleN {
      * Updates the velocities of this particle and the specified particle according
      * to the laws of elastic collision. Assumes that the particles are colliding
      * at this instant.
+     * This code also deals with collisions involving immobilized particles.
      *
      * @param  that the other particle
      */
     public void bounceOff (ParticleN that) {
+        // TODO: what if someone tries to spawn more particles than fit inside the volume?
+        if (this.mass == INFINITY && that.mass == INFINITY) {
+            assert false : "collision between 2 fixed particles";
+            // might happen if they spawn inside one another
+            return;
+        }
+
+        /*Calculate some important quantities.*/
         double[] dr = ParticleN.deltaR(this, that);
         double[] dv = ParticleN.deltaV(this, that);
         double dvdr = Couve.dotProduct(dv, dr);
         double dist = this.radius + that.radius;   // distance between particle centers at collision
 
-        boolean oneIsImmobilized = Double.isInfinite(this.mass) || Double.isInfinite(that.mass);
+        /*Deal with infinities and update the velocities.*/
+        boolean thisIsImmobilized = Double.isInfinite(this.mass);
+        boolean thatIsImmobilized = Double.isInfinite(that.mass);
+        if (thatIsImmobilized) {
+            double velMagnitude = Math.sqrt(Couve.dotProduct(this.v, this.v));
+            // System.out.println("before:" + Arrays.toString(this.v)+" | "+Math.sqrt(Couve.dotProduct(this.v, this.v)));
+            Couve.scale(0, this.v); //zero out
+            Couve.scaledIncrement(this.v, -1 * velMagnitude / dist, dr);
+            // System.out.println("after:" + Arrays.toString(this.v)+" | " +Math.sqrt(Couve.dotProduct(this.v, this.v)) +"\n");
+            this.count++;
+            //that.count++;
 
-        if (oneIsImmobilized) {
-            if (this.mass != INFINITY) {
-                this.reflect();
-            }
-            // One might be inside the other; idk.
-            if (that.mass != INFINITY) {
-                that.reflect();
-            }
-        } else {
+        } else if (thisIsImmobilized) {
+            double velMagnitude = Math.sqrt(Couve.dotProduct(that.v, that.v));
+            // System.out.println("before:"+ Arrays.toString(that.v)+" | "+Math.sqrt(Couve.dotProduct(that.v, that.v)));
+            Couve.scale(0, that.v); //zero out
+            Couve.scaledIncrement(that.v, 1*velMagnitude / dist, dr);
+            // System.out.println("after:"+ Arrays.toString(that.v)+" | "+Math.sqrt(Couve.dotProduct(that.v, that.v))+"\n");
+            that.count++;
+            //this.count++;
+
+        } else { // regular collision
+
             /*Impulse from normal forces.*/
-            double magnitude = 2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
-            //double[] J = Couve.scale(magnitude/dist, dr);
+            double impulseMagnitude = -2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
+            // System.out.println("  impulse: "+impulseMagnitude);
 
-            Couve.scaledIncrement(this.v, 1/this.mass * magnitude/dist, dr);
-            Couve.scaledIncrement(that.v, -1/that.mass * magnitude/dist, dr);
+            //double[] impulse = Couve.scale(impulseMagnitude/dist, dr);
+
+            Couve.scaledIncrement(this.v, -1 / this.mass * impulseMagnitude / dist, dr);
+            Couve.scaledIncrement(that.v, 1 / that.mass * impulseMagnitude / dist, dr);
+
+            /*Update collision counts.*/
+            // TODO: should we always update both collision counts? does it matter?
+            this.count++;
+            that.count++;
         }
-
-        /*Update collision counts.*/
-        this.count++;
-        that.count++;
 
         /*Overriding subclasses have the chance to do something here.*/
         this.handleBinaryCollision(that);
@@ -268,6 +297,26 @@ public class ParticleN {
     /**Intentionally-not-implemented method that is called at the end of a binary collision.*/
     public void handleBinaryCollision (ParticleN that) {
         ;
+    }
+
+    /**Separates the two particles if one is inside the other.*/
+    public void getOut (ParticleN that) {
+        // TODO: make getOut smooth
+        // TODO: are particles at the exact same position a problem?
+        // TODO: what if someone tries to spawn more particles than fit inside the volume?
+
+        double dist = this.radius + that.radius;   // distance between particle centers at collision
+        double[] dr = ParticleN.deltaR(this, that);
+        for (int i = 0; i < dr.length; i++) {
+            if (dr[i] == 0) {
+                System.err.println("positions are exactly equal!!");
+                System.err.println(Arrays.toString(dr));
+            }
+        }
+
+        // Might look better if switched around?
+        Couve.scaledIncrement(this.r, -that.radius / dist, dr);
+        Couve.scaledIncrement(that.r, this.radius / dist, dr);
     }
 
     /**
@@ -280,6 +329,20 @@ public class ParticleN {
     public void bounceOffNWall (int N) {
         v[N] = -v[N];
         count++;
+    }
+    /**Prints general information about this particle.*/
+    @Override
+    public String toString() {
+        return "ParticleN{" +
+                // "DIM=" + DIM +
+                ", radius=" + radius +
+                ", mass=" + mass +
+                ", r=" + Arrays.toString(r) +
+                ", v=" + Arrays.toString(v) +
+                // ", color=" + Arrays.toString(color) +
+                ", count=" + count +
+                // ", savedMass=" + savedMass +
+                '}';
     }
 }
 
