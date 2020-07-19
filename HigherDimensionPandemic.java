@@ -77,7 +77,6 @@ public class HigherDimensionPandemic extends SimpleApplication {
             } else if (options.contains("socialdistancing")) {
                 if (StdRandom.bernoulli(0.75)) {
                     immobilize();
-                    setColor(new float[]{1,1,1,1}); //erase
                 }
             }
 
@@ -94,7 +93,6 @@ public class HigherDimensionPandemic extends SimpleApplication {
             infectedBeings++;
             status = 'U'; // updateInfection
             setColor(ParticleN.RED);
-            if (isImmovable()) setColor(new float[]{1,1,1,1}); //erase
             timer = 5+Math.abs(StdRandom.gaussian(baseRecoveryTime, 4.2));
             /*In reality, this would look more like a gamma/Weibull/log-normal distribution*/
         }
