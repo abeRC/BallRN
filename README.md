@@ -1,4 +1,4 @@
-# BallRN
+# HigherDimensionPandemic
 Simulation of a pandemic in higher dimensions
 
 ## jMonkeyEngine
@@ -22,14 +22,27 @@ particles to create.
 
 ### Accepted flags:  
  ```
-  --help          			  Print this information. 
+  --help          			  Print this information.
+  --fullscreen                             Display in fullscreen (if settings are hidden).
   --chart          			  Draw a chart using StdDraw. 
   --space           	   		  Use a space texture for the cube. 
-  --social-distancing   	 		  Restrict movement by 3/4. 
-  --max-social-distancing    		  Restrict movement by 7/8. 
+  --textured-balls         	          Use a lagoon texture for the balls.
+  --social-distancing [DOUBLE]             Restrict movement of this fraction of particles. 
   --dump-walls         		 	  Dump wall collision information to stdout.
+  --dump-events                            Dump PQ event information to stdout.
  ```
 
 ### NOTE: 
 
 If `ParticleN.DEFAULTRADIUS` is set to large-ish values, the program will go crazy. The (set of) fix(es) needed is pretty involved.
+
+## Other licenses
+This program uses [jMonkeyEngine](https://wiki.jmonkeyengine.org/docs/documentation.html), which is released under the [BSD license](https://wiki.jmonkeyengine.org/docs/bsd_license.html).
+
+This program also uses Sedgewick & Wayne's [algs4.jar](https://algs4.cs.princeton.edu/code/) library, which is released under the [GNU GPLv3](http://www.gnu.org/copyleft/gpl.html). You should've already received a copy of it.
+
+## Created
+as part of the final CCM0128 (Computação II) assignment in the Molecular Sciences Course (CCM-USP) by:
+* Aécio Beltrão Rodrigues Castro
+* Lia Noguchi Simões
+* Tiago Estevam Corrêa
