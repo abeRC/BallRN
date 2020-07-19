@@ -1,10 +1,12 @@
 import com.jme3.app.SimpleApplication;
+import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
+import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import edu.princeton.cs.algs4.SET;
@@ -60,6 +62,8 @@ public class HigherDimensionPandemic extends SimpleApplication {
     private static boolean makeChart = false;
     private static boolean DUMPWALLS = false;
     private static Material spaceMat; // to avoid uninitialized error
+    private static Texture lagoonTex;
+    private static boolean texturedBalls = false;
     float time = 0;
 
     /**Implement extra methods to simulate a pandemic.*/
@@ -134,6 +138,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 "   --fullscreen                Display in fullscreen.\n" +
                 "   --chart                     Draw a chart using StdDraw.\n" +
                 "   --space                     Use a space texture for the cube.\n" +
+                "   --textured-balls            Use a lagoon texture for the balls.\n" +
                 "   --social-distancing         Restrict movement by 3/4.\n" +
                 "   --max-social-distancing     Restrict movement by 7/8.\n" +
                 "   --dump-walls                Dump wall collision information to stdout.\n";
@@ -181,6 +186,9 @@ public class HigherDimensionPandemic extends SimpleApplication {
         if (options.contains("dumpwalls")) {
             DUMPWALLS = true;
         }
+        if (options.contains("texturedballs")) {
+            texturedBalls = true;
+        }
 
         /*Scientifically determine the correct dimensions to analyze.*/
         pick3Dimensions();
@@ -220,7 +228,19 @@ public class HigherDimensionPandemic extends SimpleApplication {
     public void simpleInitApp () {
 
         if (makeChart) StdDraw.setCanvasSize(800, 100);
-        flyCam.setMoveSpeed(7.1f); // Make the camera more bearable.
+        flyCam.setMoveSpeed(8f); // Make the camera more bearable.
+
+        if (texturedBalls) {
+            lagoonTex = assetManager.loadTexture("assets/Textures/Lagoon/lagoon_west.jpg");
+
+            /**Must add a light to make the textured objects visible! */
+            DirectionalLight sun = new DirectionalLight();
+            sun.setDirection(new Vector3f(1, 0, -2).normalizeLocal());
+            sun.setColor(ColorRGBA.White);
+            rootNode.addLight(sun);
+        }
+
+
 
         /*Put up walls N-dimensionally. (Actually, they're just for show)*/
         makewalls();
@@ -347,6 +367,9 @@ public class HigherDimensionPandemic extends SimpleApplication {
                     "Common/MatDefs/Misc/Unshaded.j3md"); //default material
             float[] col = p.color();
             mat.setColor("Color", new ColorRGBA(col[0], col[1], col[2], col[3]));
+            if (texturedBalls) {
+                mat.setTexture("ColorMap", lagoonTex);
+            }
             g.setMaterial(mat);
         }
 

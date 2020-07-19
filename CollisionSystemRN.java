@@ -79,7 +79,7 @@ public class CollisionSystemRN {
      * to guarantee that it is not inside other particles.*/
     private void predict (ParticleN a) {
         assert a != null : "Can't predict the behavior of a null particle, now, can we?";
-        
+
         /* Particle-particle collisions.*/
         for (ParticleN part : particles) {
             double dt = a.timeToHit(part);
