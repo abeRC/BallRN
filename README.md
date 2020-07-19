@@ -41,6 +41,11 @@ This program uses [jMonkeyEngine](https://wiki.jmonkeyengine.org/docs/documentat
 
 This program also uses Sedgewick & Wayne's [algs4.jar](https://algs4.cs.princeton.edu/code/) library, which is released under the [GNU GPLv3](http://www.gnu.org/copyleft/gpl.html). You should've already received a copy of it.
 
+#### Assets:
+Cosmic Winter Wonderland: NASA / Public domain
+
+Lagoon: Hazel Whorley - Licensed under CC-BY-NC
+
 ## Created
 as part of the final CCM0128 (Computação II) assignment in the Molecular Sciences Course (CCM-USP) by:
 * Aécio Beltrão Rodrigues Castro
