@@ -10,18 +10,18 @@ import java.util.Arrays;
  *  It is assumed that the particle is inside a symmetric box centered at 0.
  */
 public class ParticleN {
-    public static final double BORDERCOORDMAX = 20.0; //1 for stddraw
-    public static final double BORDERCOORDMIN = -20.0; //0 for stddraw
+    public static final double BORDERCOORDMAX = 40.0; //1 for stddraw
+    public static final double BORDERCOORDMIN = -40.0; //0 for stddraw
     public static final float[] BLUE = new float[]{0, 0, 1, 1};
     public static final float[] RED = new float[]{1, 0, 0, 1};
     public static final float[] GREEN = new float[]{0, 1, 0, 1};
     private static final double INFINITY = Double.POSITIVE_INFINITY;
     private static final double MINF = Double.NEGATIVE_INFINITY;
     private static final double VELRANGE = 5; //0.005 for stddraw
-    public static final double DEFAULTRADIUS = 4; //0.02 for stddraw
+    public static final double DEFAULTRADIUS = 1; //0.02 for stddraw
     public static final double DEFAULTMASS = 0.5;
     private static final float[] DEFAULTCOLOR = new float[]{0, 1, 0, 1}; //green
-    private static final double EPSILON = 0.005;
+    private static final double EPSILON = 0.0005;
 
     public final int DIM; //number of translational degrees of freedom
     public final double radius;
@@ -296,8 +296,9 @@ public class ParticleN {
         ;
     }
 
-    /**Separates the two particles if one is inside the other.*/
-    public void getOut (ParticleN that) {
+    /**Separates the two particles if one is inside the other and returns
+     * {@code true} if something was done.*/
+    public boolean getOut (ParticleN that) {
         // TODO: make getOut smooth
         // TODO: are particles at the exact same position a problem?
         // TODO: what if someone tries to spawn more particles than fit inside the volume?
@@ -323,6 +324,8 @@ public class ParticleN {
             this.count++;
             that.count++;
         }
+
+        return inside;
     }
 
     /**

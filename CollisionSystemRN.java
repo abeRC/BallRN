@@ -34,7 +34,7 @@ public class CollisionSystemRN {
      * @param DUMPWALLS whether to dump information about particle-wall collisions
      */
     public CollisionSystemRN (ParticleN[] particles, int N, boolean DUMPWALLS) {
-        if (ParticleN.DEFAULTRADIUS >= (ParticleN.BORDERCOORDMAX-ParticleN.BORDERCOORDMIN)/10) {
+        if (ParticleN.DEFAULTRADIUS >= (ParticleN.BORDERCOORDMAX-ParticleN.BORDERCOORDMIN)/20) {
             System.err.println("This program cannot deal with highly energetic systems properly.");
         }
         this.particles = particles.clone();   // defensive copy
@@ -79,18 +79,7 @@ public class CollisionSystemRN {
      * to guarantee that it is not inside other particles.*/
     private void predict (ParticleN a) {
         assert a != null : "Can't predict the behavior of a null particle, now, can we?";
-
-        /*No movement behavior to be predicted, but let's make sure
-        * the particle isn't doing anything funny.*/
-        if (a.isImmovable()) {
-            for (ParticleN other : particles) {
-                if (a != other) {
-                    a.getOut(other);
-                }
-            }
-            return;
-        }
-
+        
         /* Particle-particle collisions.*/
         for (ParticleN part : particles) {
             double dt = a.timeToHit(part);
@@ -162,7 +151,7 @@ public class CollisionSystemRN {
                     a.bounceOff(b); /*Particle-particle collision.*/
                 }
                 /*Here we update the predicted trajectories for all involved particles.
-                * If */
+                * If one of the particles is immovable, we check if it's inside other particles, as well.*/
                 predict(a);
                 predict(b);
             } else {
