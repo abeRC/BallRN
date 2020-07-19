@@ -21,7 +21,7 @@ import java.util.Arrays;
  * out of N) view of it with jMonkeyEngine.
  * */
 public class HigherDimensionPandemic extends SimpleApplication {
-    // TODO material to aid visiblity?
+    // TODO shadows? (maybe create a black circle on the lower wall for each ball?)
 
 
     /**TODO A1. Set up program arguments (dimension, number of particles, radius, etc?)
@@ -61,6 +61,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
     private static int recoveredBeings = 0;
     private static boolean makeChart = false;
     private static boolean DUMPWALLS = false;
+    private static boolean DUMPEVENTS = false;
     private static Material spaceMat; // to avoid uninitialized error
     private static Texture lagoonTex;
     private static boolean texturedBalls = false;
@@ -141,7 +142,8 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 "   --textured-balls            Use a lagoon texture for the balls.\n" +
                 "   --social-distancing         Restrict movement by 3/4.\n" +
                 "   --max-social-distancing     Restrict movement by 7/8.\n" +
-                "   --dump-walls                Dump wall collision information to stdout.\n";
+                "   --dump-walls                Dump wall collision information to stdout.\n" +
+                "   --dump-events                Dump PQ event information to stdout.\n";
 
         if (exitCode == 0) {
             System.out.println(usage);
@@ -186,6 +188,9 @@ public class HigherDimensionPandemic extends SimpleApplication {
         if (options.contains("dumpwalls")) {
             DUMPWALLS = true;
         }
+        if (options.contains("dumpevents")) {
+            DUMPEVENTS = true;
+        }
         if (options.contains("texturedballs")) {
             texturedBalls = true;
         }
@@ -203,7 +208,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
         for (int i = 0; i < parts.length; i++) {
             parts[i] = new PartN(DIM);
         }
-        cs = new CollisionSystemRN(parts, DIM, DUMPWALLS);
+        cs = new CollisionSystemRN(parts, DIM, DUMPWALLS, DUMPEVENTS);
 
         /*Initiate application.*/
         HigherDimensionPandemic app = new HigherDimensionPandemic();

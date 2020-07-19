@@ -13,13 +13,14 @@ public class CollisionSystemRN {
     //      complication: Highest [sphere packing] density is known only in case of 1, 2, 3, 8 and 24 dimensions.
     //      also, the radii could be different
     //      maybe guess that getting >70% to work is likely too hard to bother with?
-    // TODO: fix particles escaping the world bounds (null it and handle nulls, maybe)
+    // TODO: fix particles escaping the world bounds (null it and handle nulls; freeze it; idk)
     // TODO: completely fix particles inside other particles
 
 
 
     private static final double MINF = Double.NEGATIVE_INFINITY;
     private final boolean DUMPWALLS;
+    private final boolean DUMPEVENTS;
     private final int DIM;
     private double t = 0.0; // simulation clock time
     private MinPQ<Event> pq = new MinPQ<Event>(); // the priority queue
@@ -33,13 +34,14 @@ public class CollisionSystemRN {
      * @param N the number of spatial dimensions
      * @param DUMPWALLS whether to dump information about particle-wall collisions
      */
-    public CollisionSystemRN (ParticleN[] particles, int N, boolean DUMPWALLS) {
+    public CollisionSystemRN (ParticleN[] particles, int N, boolean DUMPWALLS, boolean DUMPEVENTS) {
         if (ParticleN.DEFAULTRADIUS >= (ParticleN.BORDERCOORDMAX-ParticleN.BORDERCOORDMIN)/20) {
             System.err.println("This program cannot deal with highly energetic systems properly.");
         }
         this.particles = particles.clone();   // defensive copy
         this.DIM = N;
         this.DUMPWALLS = DUMPWALLS;
+        this.DUMPEVENTS = DUMPEVENTS;
 
         /*Initialize PQ with collision events.*/
         for (int i = 0; i < particles.length; i++) {
@@ -62,7 +64,7 @@ public class CollisionSystemRN {
      * @param N the number of spatial dimensions
      */
     public CollisionSystemRN (ParticleN[] particles, int N) {
-        this(particles, N, false);
+        this(particles, N, false, false);
     }
 
     /*Marks events in the PQ containing particle a as invalid.*/
@@ -141,7 +143,9 @@ public class CollisionSystemRN {
             }
 
             /*Starting here, the event is guaranteed to be processed.*/
-             System.out.println(e);
+            if (DUMPEVENTS) {
+                System.out.println(e);
+            }
             ParticleN a = e.a;
             ParticleN b = e.b;
             if (b != null) {

@@ -259,7 +259,6 @@ public class ParticleN {
 
         /*Impulse from normal forces.*/
         double impulseMagnitude = -2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
-        // System.out.println("  impulse: "+impulseMagnitude);
 
         //double[] impulse = Couve.scale(impulseMagnitude/dist, dr);
 
@@ -267,25 +266,17 @@ public class ParticleN {
         /*Calculate factor to ensure conservation of energy. (Otherwise everything will slow down.)*/
         double factor = 1;
         if (this.isImmovable() || that.isImmovable()) {
-            System.out.println("one is immo BA&&%AFD%A");
             factor = 2;
         }
         /*Update velocities and collision counts.*/
         if (!this.isImmovable()) {
-            System.out.println("before: "+Arrays.toString(this.v)+" | "+Couve.dotProduct(this.v,this.v));
             Couve.scaledIncrement(this.v, -1*factor / this.mass * impulseMagnitude / dist, dr);
-            System.out.println("after: "+Arrays.toString(this.v)+" | "+Couve.dotProduct(this.v,this.v)+"\n");
             this.count++;
         }
         if (!that.isImmovable()) {
-            System.out.println("before: "+Arrays.toString(this.v)+" | "+Couve.dotProduct(this.v,this.v));
             Couve.scaledIncrement(that.v, 1*factor / that.mass * impulseMagnitude / dist, dr);
-            System.out.println("after: "+Arrays.toString(this.v)+" | "+Couve.dotProduct(this.v,this.v)+"\n");
             that.count++;
         }
-        System.out.println(this);
-        System.out.println(that);
-        System.out.println("COLINFOEND");
 
         /*Overriding subclasses have the chance to do something here.*/
         this.handleBinaryCollision(that);
