@@ -8,13 +8,8 @@ import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
-import edu.princeton.cs.algs4.BST;
-import edu.princeton.cs.algs4.SET;
-import edu.princeton.cs.algs4.ST;
 import edu.princeton.cs.algs4.StdRandom;
 import edu.princeton.cs.algs4.StdDraw;
-import edu.princeton.cs.algs4.LinearProbingHashST;
-
 import java.util.*;
 
 
@@ -141,15 +136,18 @@ public class HigherDimensionPandemic extends SimpleApplication {
                 "where DIM is the number of dimensions and PNUM is the number of random\n" +
                 "particles to create.\n" +
                 "Extra options: \n" +
-                "   --help                      Print this information.\n" +
-                "   --fullscreen                Display in fullscreen.\n" +
-                "   --chart                     Draw a chart using StdDraw.\n" +
-                "   --space                     Use a space texture for the cube.\n" +
-                "   --textured-balls            Use a lagoon texture for the balls.\n" +
-                "   --social-distancing         Restrict movement by 3/4.\n" +
-                "   --max-social-distancing     Restrict movement by 7/8.\n" +
-                "   --dump-walls                Dump wall collision information to stdout.\n" +
-                "   --dump-events                Dump PQ event information to stdout.\n";
+                "   --help                            Print this information.\n" +
+                "   --fullscreen                      Display in fullscreen.\n" +
+                "   --chart                           Draw a chart using StdDraw.\n" +
+                "   --space                           Use a space texture for the cube.\n" +
+                "   --textured-balls                  Use a lagoon texture for"+
+                " the balls.\n" +
+                "   --social-distancing [DOUBLE]      Restrict movement of this"+
+                " fraction of particles.\n" +
+                "   --dump-walls                      Dump wall collision"+ 
+                " information to stdout.\n" +
+                "   --dump-events                     Dump PQ event information"+
+                "to stdout.\n";
 
         if (exitCode == 0) {
             System.out.println(usage);
