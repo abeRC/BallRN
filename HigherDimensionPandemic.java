@@ -6,14 +6,16 @@ import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
-import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
+import edu.princeton.cs.algs4.BST;
 import edu.princeton.cs.algs4.SET;
+import edu.princeton.cs.algs4.ST;
 import edu.princeton.cs.algs4.StdRandom;
 import edu.princeton.cs.algs4.StdDraw;
+import edu.princeton.cs.algs4.LinearProbingHashST;
 
-import java.util.Arrays;
+import java.util.*;
 
 
 /**
@@ -48,23 +50,31 @@ public class HigherDimensionPandemic extends SimpleApplication {
      * */
 
     public static final double baseRecoveryTime = 42;
-    private static final double INITIAL_INFECTED = 0.1;
+    private static double INITIAL_INFECTED = 0.1;
+    private static double PERCENTAGE_IMMOBILIZED = 0.75;
     public static int NUM;
     public static int DIM;
     public static int[] priDim = {0, 1, 2}; // priviliged dimensions
     private static CollisionSystemRN cs;
     private int BEINGCOUNT = 0;
     private static Being[] beings;
-    private static SET<String> options = new SET<>();
+    private static TreeSet<String> options = new TreeSet<>();
+    private static int[] dimpnum = new int[2];
     private static int infectedBeings = 0;
     private static int susceptibleBeings = 0;
     private static int recoveredBeings = 0;
-    private static boolean makeChart = false;
-    private static boolean DUMPWALLS = false;
-    private static boolean DUMPEVENTS = false;
-    private static Material spaceMat; // to avoid uninitialized error
+    private static String[] codes = {
+            "chart",
+            "dumpwalls",
+            "dumpevents",
+            "space",
+            "texturedballs",
+            "socialdistancing",
+            "fullscreen",
+    };
+    private static TreeMap<String, Boolean> boolStrings = new TreeMap<>();
+    private static Material spaceMat; // to avoid uninitialized variable error
     private static Texture lagoonTex;
-    private static boolean texturedBalls = false;
     float time = 0;
 
     /**Implement extra methods to simulate a pandemic.*/
@@ -75,12 +85,8 @@ public class HigherDimensionPandemic extends SimpleApplication {
         public PartN (int N) {
             super(N);
 
-            if (options.contains("maxsocialdistancing")) {
-                if (StdRandom.bernoulli(0.875)) {
-                    immobilize();
-                }
-            } else if (options.contains("socialdistancing")) {
-                if (StdRandom.bernoulli(0.75)) {
+            if (AC("socialdistancing")) {
+                if (StdRandom.bernoulli(PERCENTAGE_IMMOBILIZED)) {
                     immobilize();
                 }
             }
@@ -161,45 +167,115 @@ public class HigherDimensionPandemic extends SimpleApplication {
         );
     }
 
-    public static void main (String[] args) {
-        if (args.length < 1) {
+    /**Initialize treemap with our mappings for strings to indices in BOOLEANS.*/
+    private static void beforeFillBools () {
+        for (int i = 0; i < codes.length; i++) {
+            boolStrings.put(codes[i], false);
+        }
+    }
+
+    /**Mark a boolean in BOOLEANS as true.*/
+    private static void fillBools (String s) {
+        if (options.contains(s)) {
+            if (!boolStrings.containsKey(s)) {
+                System.err.println("Unrecgonized option: "+s+"\n");
+                printUsage(1);
+            } else {
+                boolStrings.put(s, true);
+            }
+        }
+    }
+
+    /**Parse command-line arguments.*/
+    private static void parse (String[] args, boolean verboseParse) {
+        int dimpnumfilled = 0;
+        boolean expectingNumber = false;
+        for (int i = 0; i < args.length; i++) {
+            String parsed = args[i].replaceAll("[^a-z0-9.]", "").toLowerCase();
+
+            if (expectingNumber) { /*Next token is a parameter to --social-distancing.*/
+                try {
+                    double d = Double.parseDouble(parsed);
+                    if (d < 0 || 1 < d) {
+                        throw new IllegalArgumentException("");
+                    }
+                    INITIAL_INFECTED = d;
+                    expectingNumber = false;
+                } catch(Exception e) {
+                    System.err.println("Parameter to --social-distancing must be a valid double from 0.0 to 1.0\n");
+                    printUsage(1);
+                }
+            } else {
+                /*Try to parse as a main argument.*/
+                try {
+                    int p = Integer.parseInt(parsed);
+                    dimpnum[dimpnumfilled] = p;
+                    dimpnumfilled++;
+                    continue;
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    System.err.println("Too many main arguments.\n");
+                    printUsage(1);
+                } catch (Exception ignored) {
+                    ;
+                }
+
+                if (parsed.equals("socialdistancing")) {
+                    options.add("socialdistancing");
+                    expectingNumber = true;
+                } else {
+                    options.add(parsed);
+                }
+            }
+        }
+        if (options.contains("help")) { /*Print help if it seems like help is requested.*/
+            printUsage(0);
+        }
+        if (expectingNumber) {
+            System.out.println("Assuming default value of "+PERCENTAGE_IMMOBILIZED+" for --social-distancing.");
+        }
+        if (dimpnumfilled != 2) {
+            System.err.println("Not enough main arguments provided.\n");
             printUsage(1);
         }
 
-        for (int i = 0; i < args.length; i++) {
-            String parsed = args[i].replaceAll("[^a-z]", "").toLowerCase();
-            if (parsed.equals("help") || (i != 0 && i != 1)) {
-                options.add(parsed);
-            }
-        }
+        /*Everything ok up to this point.*/
 
-        if (options.contains("help")) {
-            printUsage(0);
+        if (verboseParse) {
+            System.out.println("Main arguments: " + Arrays.toString(dimpnum));
+            System.out.println("Options: " + options);
         }
-        DIM = Integer.parseInt(args[0]);
+        DIM = dimpnum[0];
         if (DIM < 3) {
-            throw new IllegalArgumentException("Invalid number of dimensions.");
+            System.err.println("Invalid number of dimensions.\n");
+            printUsage(1);
         }
-        NUM = Integer.parseInt(args[1]);
+        NUM = dimpnum[1];
 
-        if (options.contains("chart")) {
-            makeChart = true;
+        /*Set the values of the boolean variables.*/
+        beforeFillBools();
+        for (String opt : options) {
+            fillBools(opt);
         }
-        if (options.contains("dumpwalls")) {
-            DUMPWALLS = true;
+    }
+
+    /**Access the boolean variable corresponding to String s.*/
+    private static boolean AC (String s) {
+        return boolStrings.get(s.toLowerCase());
+    }
+
+    public static void main (String[] args) {
+        if (args.length < 2) {
+            System.err.println("Please provide at least the 2 main arguments.\n");
+            printUsage(1);
         }
-        if (options.contains("dumpevents")) {
-            DUMPEVENTS = true;
-        }
-        if (options.contains("texturedballs")) {
-            texturedBalls = true;
-        }
+
+        parse(args, false);
 
         /*Scientifically determine the correct dimensions to analyze.*/
         pick3Dimensions();
 
         /*Dump general info.*/
-        if (DUMPWALLS) {
+        if (AC("dumpwalls")) {
             dumpGeneral();
         }
 
@@ -208,7 +284,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
         for (int i = 0; i < parts.length; i++) {
             parts[i] = new PartN(DIM);
         }
-        cs = new CollisionSystemRN(parts, DIM, DUMPWALLS, DUMPEVENTS);
+        cs = new CollisionSystemRN(parts, DIM, AC("dumpwalls"), AC("dumpevents"));
 
         /*Initiate application.*/
         HigherDimensionPandemic app = new HigherDimensionPandemic();
@@ -217,25 +293,25 @@ public class HigherDimensionPandemic extends SimpleApplication {
         as.put("VSync", true);
         as.put("Width", 1280);
         as.put("Height", 720);
-        if (options.contains("fullscreen")) {
+        if (AC("fullscreen")) {
             as.put("Fullscreen",true);
             as.put("Width", 1920);
             as.put("Height", 1080);
         }
-        app.setShowSettings(false); // Uncomment to skip the initial settings popup
+        // app.setShowSettings(false); // Uncomment to skip the initial settings popup
         app.setSettings(as);
         app.start();
     }
 
-
     /**Initialization phase.*/
     @Override
     public void simpleInitApp () {
-
-        if (makeChart) StdDraw.setCanvasSize(800, 100);
+        if (AC("chart")) {
+            StdDraw.setCanvasSize(800, 100);
+        }
         flyCam.setMoveSpeed(8f); // Make the camera more bearable.
 
-        if (texturedBalls) {
+        if (AC("texturedballs")) {
             lagoonTex = assetManager.loadTexture("assets/Textures/Lagoon/lagoon_west.jpg");
 
             /**Must add a light to make the textured objects visible! */
@@ -268,7 +344,9 @@ public class HigherDimensionPandemic extends SimpleApplication {
             b.updatePos(); // update position
             b.updateInfection(tpf);
         }
-        if (makeChart) updateChart(time); // update the chart
+        if (AC("chart")) {
+            updateChart(time); // update the chart
+        }
     }
 
     /**Arbitrarily pick 3 dimensions to display.*/
@@ -308,7 +386,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
         Box mesh = new Box(halfWallDistance, 2, halfWallDistance);
         // Starry background
 
-        if (options.contains("space")) {
+        if (AC("space")) {
             spaceMat = new Material(assetManager,
                 "Common/MatDefs/Misc/Unshaded.j3md"); //default material
             Texture space = assetManager.loadTexture("assets/Pictures/Cosmic Winter Wonderland.jpg");
@@ -322,7 +400,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
             mat.setColor("Color", ColorRGBA.randomColor());
 
             Geometry g = new Geometry("wall" + i, mesh);
-            if (options.contains("space")) {
+            if (AC("space")) {
                 g.setMaterial(spaceMat);
             } else {
                 g.setMaterial(mat);
@@ -332,8 +410,8 @@ public class HigherDimensionPandemic extends SimpleApplication {
             /*0 <= i < 2: xAngle = halfPi, yAngle = 0, zAngle = 0
             * 2 <= i < 4: xAngle = 0,      yAngle = 0, zAngle = halfPi
             * 4 <= i < 6: xAngle = 0,      yAngle = 0, zAngle = 0*/
-            g.rotate((1-i/2+i/4)*halfPi, 0, (i/2-i/4-i/4)*halfPi); // integer division is for comapctness
-            rootNode.attachChild(g); //add the wall to the scene
+            g.rotate((1-i/2+i/4)*halfPi, 0, (i/2-i/4-i/4)*halfPi); // integer division is for compactness
+            rootNode.attachChild(g); // add the wall to the scene
         }
     }
 
@@ -372,7 +450,7 @@ public class HigherDimensionPandemic extends SimpleApplication {
                     "Common/MatDefs/Misc/Unshaded.j3md"); //default material
             float[] col = p.color();
             mat.setColor("Color", new ColorRGBA(col[0], col[1], col[2], col[3]));
-            if (texturedBalls) {
+            if (AC("texturedballs")) {
                 mat.setTexture("ColorMap", lagoonTex);
             }
             g.setMaterial(mat);

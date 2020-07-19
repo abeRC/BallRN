@@ -5,5 +5,5 @@ _JAVA="java -classpath "$_CLASSPATH""
 
 rm *.class
 $_JAVAC HigherDimensionPandemic.java
-$_JAVA HigherDimensionPandemic 3 50 --texturedballs
+$_JAVA HigherDimensionPandemic  3  50 --textured-balls --social-distancing 0.2 --space
 
