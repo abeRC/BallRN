@@ -35,7 +35,7 @@ public class CollisionSystemRN {
      */
     public CollisionSystemRN (ParticleN[] particles, int N, boolean DUMPWALLS) {
         if (ParticleN.DEFAULTRADIUS >= (ParticleN.BORDERCOORDMAX-ParticleN.BORDERCOORDMIN)/10) {
-            System.err.println("This program cannot deal with highly energetic / non-physical systems.");
+            System.err.println("This program cannot deal with highly energetic systems properly.");
         }
         this.particles = particles.clone();   // defensive copy
         this.DIM = N;
@@ -77,6 +77,10 @@ public class CollisionSystemRN {
     /** Updates the priority queue with all new events for particle a.*/
     private void predict (ParticleN a) {
         assert a != null : "Can't predict the behavior of a null particle, now, can we?";
+
+        if (a.isImmovable()) {
+            return; /*No movement behavior to be predicted.*/
+        }
 
         /* Particle-particle collisions.*/
         for (ParticleN part : particles) {
@@ -137,19 +141,17 @@ public class CollisionSystemRN {
             }
 
             /*Starting here, the event is guaranteed to be processed.*/
-            // System.out.println(e);
+             System.out.println(e);
             ParticleN a = e.a;
             ParticleN b = e.b;
             if (b != null) {
                 if (e.time == MINF) { /*One particle is inside the other*/
                     a.getOut(b);
-                    //predict(a); //erase
-                    //predict(b);
                 } else {
                     a.bounceOff(b); /*Particle-particle collision.*/
-                    predict(a);
-                    predict(b);
                 }
+                predict(a);
+                predict(b);
             } else {
                 /*Particle-wall collision.*/
                 a.bounceOffNWall(e.N);

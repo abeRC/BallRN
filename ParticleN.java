@@ -18,7 +18,7 @@ public class ParticleN {
     private static final double INFINITY = Double.POSITIVE_INFINITY;
     private static final double MINF = Double.NEGATIVE_INFINITY;
     private static final double VELRANGE = 5; //0.005 for stddraw
-    public static final double DEFAULTRADIUS = 1; //0.02 for stddraw
+    public static final double DEFAULTRADIUS = 4; //0.02 for stddraw
     public static final double DEFAULTMASS = 0.5;
     private static final float[] DEFAULTCOLOR = new float[]{0, 1, 0, 1}; //green
 
@@ -28,8 +28,9 @@ public class ParticleN {
     private final double[] r; // position
     private final double[] v; // velocity
     private float[] color; // array of red, green, blue, alpha values
+    /**NOTE: Actually, count is used to indicate that trajectories must be updated.*/
     private int count; // number of collisions so far
-    private double savedMass = Double.NaN;
+    private boolean immovable = false;
 
     // TODO: make getOut smooth
     // TODO: are particles at the exact same position a problem?
@@ -98,18 +99,20 @@ public class ParticleN {
 
     /**Prevent this particle from moving.*/
     public void immobilize () {
-        savedMass = mass;
-        mass = INFINITY;
+        immovable = true;
         for (int i = 0; i < DIM; i++) {
             v[i] = 0;
         }
     }
 
+    /**Checks if this particle is immovable.*/
+    public boolean isImmovable () {
+        return immovable;
+    }
+
     /**Frees this particle from imprisonment.*/
     public void free () {
-        if (!Double.isNaN(savedMass)) {
-            mass = savedMass;
-        }
+        immovable = false;
     }
 
     /**
@@ -119,7 +122,9 @@ public class ParticleN {
      * @param  dt the amount of time
      */
     public void move (double dt) {
-        Couve.scaledIncrement(r, dt, v); //r += v*dt
+        if (!immovable) {
+            Couve.scaledIncrement(r, dt, v); //r += v*dt
+        }
     }
 
     /**
@@ -240,55 +245,46 @@ public class ParticleN {
      */
     public void bounceOff (ParticleN that) {
         // TODO: what if someone tries to spawn more particles than fit inside the volume?
-        if (this.mass == INFINITY && that.mass == INFINITY) {
-            assert false : "collision between 2 fixed particles";
-            // might happen if they spawn inside one another
-            return;
+
+        if (this.isImmovable() && that.isImmovable()) {
+            return; /*Nothing to be done if they're both immovable.*/
         }
 
         /*Calculate some important quantities.*/
         double[] dr = ParticleN.deltaR(this, that);
         double[] dv = ParticleN.deltaV(this, that);
         double dvdr = Couve.dotProduct(dv, dr);
-        double dist = this.radius + that.radius;   // distance between particle centers at collision
+        double dist = this.radius + that.radius; // distance between particle centers at collision
 
-        /*Deal with infinities and update the velocities.*/
-        boolean thisIsImmobilized = Double.isInfinite(this.mass);
-        boolean thatIsImmobilized = Double.isInfinite(that.mass);
-        if (thatIsImmobilized) {
-            double velMagnitude = Math.sqrt(Couve.dotProduct(this.v, this.v));
-            // System.out.println("before:" + Arrays.toString(this.v)+" | "+Math.sqrt(Couve.dotProduct(this.v, this.v)));
-            Couve.scale(0, this.v); //zero out
-            Couve.scaledIncrement(this.v, -1 * velMagnitude / dist, dr);
-            // System.out.println("after:" + Arrays.toString(this.v)+" | " +Math.sqrt(Couve.dotProduct(this.v, this.v)) +"\n");
+        /*Impulse from normal forces.*/
+        double impulseMagnitude = -2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
+        // System.out.println("  impulse: "+impulseMagnitude);
+
+        //double[] impulse = Couve.scale(impulseMagnitude/dist, dr);
+
+
+        /*Calculate factor to ensure conservation of energy. (Otherwise everything will slow down.)*/
+        double factor = 1;
+        if (this.isImmovable() || that.isImmovable()) {
+            System.out.println("one is immo BA&&%AFD%A");
+            factor = 2;
+        }
+        /*Update velocities and collision counts.*/
+        if (!this.isImmovable()) {
+            System.out.println("before: "+Arrays.toString(this.v)+" | "+Couve.dotProduct(this.v,this.v));
+            Couve.scaledIncrement(this.v, -1*factor / this.mass * impulseMagnitude / dist, dr);
+            System.out.println("after: "+Arrays.toString(this.v)+" | "+Couve.dotProduct(this.v,this.v)+"\n");
             this.count++;
-            //that.count++;
-
-        } else if (thisIsImmobilized) {
-            double velMagnitude = Math.sqrt(Couve.dotProduct(that.v, that.v));
-            // System.out.println("before:"+ Arrays.toString(that.v)+" | "+Math.sqrt(Couve.dotProduct(that.v, that.v)));
-            Couve.scale(0, that.v); //zero out
-            Couve.scaledIncrement(that.v, 1*velMagnitude / dist, dr);
-            // System.out.println("after:"+ Arrays.toString(that.v)+" | "+Math.sqrt(Couve.dotProduct(that.v, that.v))+"\n");
-            that.count++;
-            //this.count++;
-
-        } else { // regular collision
-
-            /*Impulse from normal forces.*/
-            double impulseMagnitude = -2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
-            // System.out.println("  impulse: "+impulseMagnitude);
-
-            //double[] impulse = Couve.scale(impulseMagnitude/dist, dr);
-
-            Couve.scaledIncrement(this.v, -1 / this.mass * impulseMagnitude / dist, dr);
-            Couve.scaledIncrement(that.v, 1 / that.mass * impulseMagnitude / dist, dr);
-
-            /*Update collision counts.*/
-            // TODO: should we always update both collision counts? does it matter?
-            this.count++;
+        }
+        if (!that.isImmovable()) {
+            System.out.println("before: "+Arrays.toString(this.v)+" | "+Couve.dotProduct(this.v,this.v));
+            Couve.scaledIncrement(that.v, 1*factor / that.mass * impulseMagnitude / dist, dr);
+            System.out.println("after: "+Arrays.toString(this.v)+" | "+Couve.dotProduct(this.v,this.v)+"\n");
             that.count++;
         }
+        System.out.println(this);
+        System.out.println(that);
+        System.out.println("COLINFOEND");
 
         /*Overriding subclasses have the chance to do something here.*/
         this.handleBinaryCollision(that);
@@ -305,7 +301,7 @@ public class ParticleN {
         // TODO: are particles at the exact same position a problem?
         // TODO: what if someone tries to spawn more particles than fit inside the volume?
 
-        double dist = this.radius + that.radius;   // distance between particle centers at collision
+        double dist = this.radius + that.radius; // distance between particle centers at collision
         double[] dr = ParticleN.deltaR(this, that);
         for (int i = 0; i < dr.length; i++) {
             if (dr[i] == 0) {
@@ -314,9 +310,13 @@ public class ParticleN {
             }
         }
 
-        // Might look better if switched around?
+        // I thought it might look better if switched around.
         Couve.scaledIncrement(this.r, -that.radius / dist, dr);
         Couve.scaledIncrement(that.r, this.radius / dist, dr);
+
+        /*Update collision counts to indicate that trajectories must be updated.*/
+        this.count++;
+        that.count++;
     }
 
     /**
@@ -330,9 +330,10 @@ public class ParticleN {
         v[N] = -v[N];
         count++;
     }
+
     /**Prints general information about this particle.*/
     @Override
-    public String toString() {
+    public String toString () {
         return "ParticleN{" +
                 // "DIM=" + DIM +
                 ", radius=" + radius +
@@ -341,7 +342,7 @@ public class ParticleN {
                 ", v=" + Arrays.toString(v) +
                 // ", color=" + Arrays.toString(color) +
                 ", count=" + count +
-                // ", savedMass=" + savedMass +
+                ", immovable=" + immovable +
                 '}';
     }
 }
