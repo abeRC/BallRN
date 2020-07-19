@@ -21,6 +21,7 @@ public class ParticleN {
     public static final double DEFAULTRADIUS = 4; //0.02 for stddraw
     public static final double DEFAULTMASS = 0.5;
     private static final float[] DEFAULTCOLOR = new float[]{0, 1, 0, 1}; //green
+    private static final double EPSILON = 0.005;
 
     public final int DIM; //number of translational degrees of freedom
     public final double radius;
@@ -301,22 +302,27 @@ public class ParticleN {
         // TODO: are particles at the exact same position a problem?
         // TODO: what if someone tries to spawn more particles than fit inside the volume?
 
-        double dist = this.radius + that.radius; // distance between particle centers at collision
+        double combinedRadius = this.radius + that.radius; // distance between particle centers at collision
         double[] dr = ParticleN.deltaR(this, that);
-        for (int i = 0; i < dr.length; i++) {
-            if (dr[i] == 0) {
-                System.err.println("positions are exactly equal!!");
-                System.err.println(Arrays.toString(dr));
+        double drdr = Couve.dotProduct(dr, dr); // distance^2 between particles
+        boolean inside = (drdr < combinedRadius*combinedRadius - EPSILON);
+
+        if (inside) {
+            for (int i = 0; i < dr.length; i++) {
+                if (dr[i] == 0) {
+                    System.err.println("positions are exactly equal!!");
+                    System.err.println(Arrays.toString(dr));
+                }
             }
+
+            // I thought it might look better if switched around.
+            Couve.scaledIncrement(this.r, -that.radius / combinedRadius, dr);
+            Couve.scaledIncrement(that.r, this.radius / combinedRadius, dr);
+
+            /*Update collision counts to indicate that trajectories must be updated.*/
+            this.count++;
+            that.count++;
         }
-
-        // I thought it might look better if switched around.
-        Couve.scaledIncrement(this.r, -that.radius / dist, dr);
-        Couve.scaledIncrement(that.r, this.radius / dist, dr);
-
-        /*Update collision counts to indicate that trajectories must be updated.*/
-        this.count++;
-        that.count++;
     }
 
     /**

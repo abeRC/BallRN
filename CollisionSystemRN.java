@@ -74,12 +74,21 @@ public class CollisionSystemRN {
         }
     }
 
-    /** Updates the priority queue with all new events for particle a.*/
+    /** Updates the priority queue with all new events for particle a.
+     * This method has a special purpose if the particle is immovable:
+     * to guarantee that it is not inside other particles.*/
     private void predict (ParticleN a) {
         assert a != null : "Can't predict the behavior of a null particle, now, can we?";
 
+        /*No movement behavior to be predicted, but let's make sure
+        * the particle isn't doing anything funny.*/
         if (a.isImmovable()) {
-            return; /*No movement behavior to be predicted.*/
+            for (ParticleN other : particles) {
+                if (a != other) {
+                    a.getOut(other);
+                }
+            }
+            return;
         }
 
         /* Particle-particle collisions.*/
@@ -93,11 +102,13 @@ public class CollisionSystemRN {
         /* Particle-wall collisions.
         * The particle might hit multiple walls at once (a corner) if it's fat,
         * so we should check all walls.*/
-        double[] times = a.timeToHitWalls();
-        for (int i = 0; i < DIM; i++) {
-            double dt = times[i];
-            if (dt < Double.POSITIVE_INFINITY) {
-                pq.insert(new Event(t+dt, a, null, i));
+        if (!a.isImmovable()) {
+            double[] times = a.timeToHitWalls();
+            for (int i = 0; i < DIM; i++) {
+                double dt = times[i];
+                if (dt < Double.POSITIVE_INFINITY) {
+                    pq.insert(new Event(t + dt, a, null, i));
+                }
             }
         }
     }
@@ -150,6 +161,8 @@ public class CollisionSystemRN {
                 } else {
                     a.bounceOff(b); /*Particle-particle collision.*/
                 }
+                /*Here we update the predicted trajectories for all involved particles.
+                * If */
                 predict(a);
                 predict(b);
             } else {
